@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מחולל פס התקדמות פרקים | Chapter Progress Bar</title>
+  <meta name="description" content="כלי חינמי ליצירת פס התקדמות פרקים לסרטוני יוטיוב — בלי תוכנות עריכה. הכל רץ בדפדפן." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>מחולל פס התקדמות פרקים 🎬</h1>
+    <p class="tagline">בנו פס התקדמות יפה לסרטון שלכם — הזינו פרקים, צבעו, וייצאו. הכל קורה במחשב שלכם, שום קובץ לא נשלח לשרת.</p>
+  </header>
+
+  <main class="layout">
+    <!-- ============ CONTROLS ============ -->
+    <section class="controls" aria-label="הגדרות">
+
+      <div class="card">
+        <h2>הפרקים</h2>
+        <div id="chapters" class="chapters"></div>
+        <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
+      </div>
+
+      <div class="card">
+        <h2>הגדרות סרטון</h2>
+        <div class="field-row">
+          <label>אורך כולל (שניות)
+            <input type="number" id="totalSeconds" min="1" step="1" value="60" />
+            <small>נמלא אוטומטית מסכום הפרקים. אפשר להאריך אם יש אינטרו/אאוטרו בלי פס.</small>
+          </label>
+        </div>
+        <div class="field-row two">
+          <label>קצב פריימים (FPS)
+            <select id="fps">
+              <option value="24">24</option>
+              <option value="25">25</option>
+              <option value="30" selected>30</option>
+              <option value="50">50</option>
+              <option value="60">60</option>
+            </select>
+          </label>
+          <label>רזולוציה
+            <select id="resolution">
+              <option value="1920x1080" selected>1920×1080 — אופקי</option>
+              <option value="1080x1920">1080×1920 — אנכי (ריל/שורטס)</option>
+              <option value="1280x720">1280×720 — אופקי קטן</option>
+              <option value="720x1280">720×1280 — אנכי קטן</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>עיצוב הפס</h2>
+        <div class="field-row">
+          <label>גובה הפס
+            <input type="range" id="barHFrac" min="0.03" max="0.2" step="0.005" value="0.09" />
+          </label>
+        </div>
+        <div class="field-row">
+          <label>מרחק מתחתית הפריים
+            <input type="range" id="barYCenterFrac" min="0.02" max="0.45" step="0.005" value="0.08" />
+          </label>
+        </div>
+        <div class="field-row">
+          <label>שקיפות רקע
+            <input type="range" id="bgOpacity" min="0" max="255" step="5" value="190" />
+          </label>
+        </div>
+        <div class="field-row">
+          <label>גודל טקסט (יחסית לגובה הפס)
+            <input type="range" id="labelSizeFrac" min="0.2" max="0.7" step="0.02" value="0.42" />
+          </label>
+        </div>
+        <div class="field-row">
+          <label>עיגול פינות
+            <input type="range" id="cornerRadiusFrac" min="0" max="0.5" step="0.02" value="0" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PREVIEW + EXPORT ============ -->
+    <section class="preview-pane" aria-label="תצוגה מקדימה">
+      <div class="card preview-card">
+        <h2>תצוגה מקדימה</h2>
+        <div class="canvas-wrap">
+          <div class="checkerboard"></div>
+          <canvas id="preview"></canvas>
+        </div>
+        <div class="scrubber-row">
+          <button type="button" id="playBtn" class="btn btn-icon" title="נגן/עצור">▶</button>
+          <input type="range" id="scrub" min="0" max="1000" step="1" value="0" />
+          <span id="timeLabel" class="time-label">0:00</span>
+        </div>
+      </div>
+
+      <div class="card export-card">
+        <h2>ייצוא</h2>
+
+        <div class="export-option">
+          <h3>שכבת שקיפות (לעורכי וידאו) </h3>
+          <p>קובץ WebM שקוף — גוררים מעל הסרטון בפרימייר / פיינל קאט / דה-וינצ'י. <strong>לא מתאים ל-CapCut.</strong> ההקלטה מתבצעת בזמן אמת, אז סרטון ארוך ייקח זמן.</p>
+          <button type="button" id="exportOverlay" class="btn btn-primary">ייצוא שכבה שקופה (WebM)</button>
+        </div>
+
+        <hr />
+
+        <div class="export-option">
+          <h3>סרטון מוכן עם הפס (מומלץ ל-CapCut) </h3>
+          <p>בוחרים את קובץ הוידאו שלכם, הפס נצרב עליו, ומקבלים MP4 מוכן להעלאה. הקובץ נשאר במחשב שלכם.</p>
+          <input type="file" id="videoFile" accept="video/mp4,video/*" />
+          <button type="button" id="exportBurnin" class="btn btn-primary" disabled>צריבת הפס על הסרטון (MP4)</button>
+          <p id="burninSupport" class="support-note"></p>
+        </div>
+
+        <div id="exportStatus" class="export-status" hidden>
+          <div class="progress-bar"><div id="exportProgress" class="progress-fill"></div></div>
+          <p id="exportStatusText"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
