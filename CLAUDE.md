@@ -41,9 +41,14 @@ tests/                # Playwright scripts (see "Testing")
 ## Features (current)
 - **Inputs:** total video length first; chapters = name + **start timestamp** (ms precision OK);
   width mode **equal (default)** / by-length; FPS; resolution (incl. vertical presets).
+- **Chapters auto-sort** by start time (`sortChapterRows()`); a blank new row stays last until filled.
 - **Two display styles:** horizontal **bar** (default) / **circle (Pomodoro)** countdown.
 - **Direction:** **LTR (default)** / RTL toggle — flips chapter order + playhead; the scrubber's
   direction follows it.
+- **Bar geometry:** height, vertical position (up to the very top, `barYCenterFrac` max 1.0),
+  crop from **top/bottom** (`cropTopFrac`/`cropBottomFrac` clip the bar), corner radius.
+- **Uniform label size:** all chapter names render at one size — `renderBar` finds the largest size
+  (≤ the slider) that fits every label, no per-chapter shrinking.
 - **Playhead marker:** shape (bar/line/triangle/circle/none) + width + color.
 - **Fonts:** system Arial + Google Hebrew fonts (Heebo, Open Sans, Noto Sans, Assistant, Rubik,
   Alef, Miriam Libre + display faces); loaded before render. Text color picker.
@@ -58,6 +63,8 @@ tests/                # Playwright scripts (see "Testing")
   Preview is **sticky**.
 - **Validation:** video length must exceed the last chapter's start; otherwise a warning shows and
   both export buttons are disabled.
+- **Reset buttons:** "↺ איפוס העיצוב" restores all design controls to defaults; "↺ איפוס הפרקים"
+  restores the default chapter rows (both confirm() first).
 
 ## Exports
 - **Overlay (`.webm`, transparent):** `MediaRecorder` VP9/VP8 with alpha (WebCodecs can't encode
