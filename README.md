@@ -25,6 +25,22 @@ Chapter end = the next chapter's start; the last chapter ends at the video's end
 Shared controls: font (system + Google Hebrew fonts), text color, background opacity, FPS,
 resolution. Exports show a live **percentage + ETA** ("מייצר פס ההתקדמות… 27% · נותרו כ-1 שנ׳").
 
+**Optional video upload (makes it easy):** pick your video and the tool auto-detects **duration,
+resolution, and FPS** (via `HTMLVideoElement` metadata + a `requestVideoFrameCallback` fps sample —
+no full-file read) and shows your real footage **behind the bar in the preview**. Scrub your video
+and click to **capture chapter start times** (millisecond-precise) instead of reading them elsewhere.
+The video never leaves the browser.
+
+**RTL / LTR direction:** the bar can run left→right (YouTube style) or **right→left** for Hebrew
+(first chapter on the right, playhead moves right→left). Geometry is mirrored via a canvas transform;
+labels stay un-mirrored.
+
+**Subtitles (SRT) with RTL:** upload an `.srt` and the subtitles render right-to-left over the video
+in the preview and the burned-in MP4 (size / position / color / background controls).
+
+The **preview is sticky**, so design changes (color, font, size) are visible live while scrolling
+the controls.
+
 1. **Transparent overlay (`.webm`)** — a transparent clip to drop on top of their own video
    in Premiere / Final Cut / Resolve / OBS. Recorded via `MediaRecorder` (VP9/VP8 alpha) in
    real time. Best for short/medium clips and pro editors.

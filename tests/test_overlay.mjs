@@ -10,7 +10,12 @@ page.on('console', m => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
 
-// short clip for a fast test
+// short clip for a fast test — set chapter starts within the 2s length so it validates
+await page.locator('#videoLength').fill('0:02');
+await page.locator('#videoLength').dispatchEvent('input');
+const starts = await page.$$('.ch-start');
+const sv = ['0:00', '0:00.5', '0:01', '0:01.5'];
+for (let i = 0; i < starts.length; i++) await starts[i].fill(sv[i] || '0:01.5');
 await page.locator('#videoLength').fill('0:02');
 await page.locator('#videoLength').dispatchEvent('input');
 

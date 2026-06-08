@@ -10,6 +10,7 @@
 // All "frac" values are fractions of frame height/width, so the bar scales with resolution.
 export const DEFAULT_STYLE = {
   layout: 'bar',          // 'bar' (horizontal) | 'circle' (Pomodoro-style indicator)
+  direction: 'ltr',       // 'ltr' | 'rtl' — bar chapter order + playhead direction
   // --- circle layout ---
   circleSizeFrac: 0.22,   // diameter as fraction of frame height
   circlePos: 'br',        // 'tl' | 'tr' | 'bl' | 'br' | 'center'
@@ -30,6 +31,11 @@ export const DEFAULT_STYLE = {
   playheadRGBA: [255, 255, 255, 220],
   labelRGBA: [255, 255, 255, 235],
   labelShadowRGBA: [0, 0, 0, 200],
+  // --- subtitles (only drawn when cues are supplied) ---
+  subSizeFrac: 0.045,         // subtitle font size as fraction of frame height
+  subPosFrac: 0.18,           // distance from bottom to the BOTTOM of the subtitle block
+  subRGBA: [255, 255, 255, 255],
+  subBgRGBA: [0, 0, 0, 140],  // readability box behind the text
   // Palette as 0..1 RGB triplets (teal, blue, purple, coral, gold) — same as the script.
   palette: [
     [0.06, 0.43, 0.34],
@@ -135,6 +141,72 @@ export function renderFrame(ctx, opts) {
   } else {
     renderBar(ctx, opts);
   }
+  renderSubtitles(ctx, {
+    elapsedSec: opts.elapsedSec || 0,
+    subtitles: opts.subtitles,
+    width: opts.width, height: opts.height, style,
+  });
+}
+
+// Draw the active subtitle cue (if any) — RTL-aware, multi-line, with a readability box.
+function renderSubtitles(ctx, { elapsedSec, subtitles, width, height, style = DEFAULT_STYLE }) {
+  if (!subtitles || !subtitles.length) return;
+  let cue = null;
+  for (const c of subtitles) {
+    if (elapsedSec >= c.startSec && elapsedSec < c.endSec) { cue = c; break; }
+  }
+  if (!cue || !cue.text) return;
+
+  const fontSize = Math.max(12, Math.round((style.subSizeFrac ?? 0.045) * height));
+  const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
+  ctx.font = `bold ${fontSize}px ${family}`;
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+  ctx.textBaseline = 'top';
+
+  const maxWidth = width * 0.9;
+  const lines = [];
+  for (const raw of cue.text.split('\n')) lines.push(...wrapLine(ctx, raw, maxWidth));
+
+  const lineH = Math.round(fontSize * 1.25);
+  const blockH = lines.length * lineH;
+  const cx = width / 2;
+  const bottomY = height - Math.round((style.subPosFrac ?? 0.18) * height);
+  const topY = bottomY - blockH;
+
+  let maxLineW = 0;
+  for (const ln of lines) maxLineW = Math.max(maxLineW, ctx.measureText(ln).width);
+  const padX = fontSize * 0.5, padY = fontSize * 0.3;
+
+  if (style.subBgRGBA && style.subBgRGBA[3] > 0) {
+    const boxW = Math.min(width, maxLineW + padX * 2);
+    ctx.fillStyle = rgba(style.subBgRGBA);
+    roundRect(ctx, cx - boxW / 2, topY - padY, cx + boxW / 2, bottomY + padY, Math.round(fontSize * 0.25));
+    ctx.fill();
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const y = topY + i * lineH;
+    ctx.fillStyle = rgba(style.labelShadowRGBA);
+    ctx.fillText(lines[i], cx + 1, y + 1);
+    ctx.fillStyle = rgba(style.subRGBA || [255, 255, 255, 255]);
+    ctx.fillText(lines[i], cx, y);
+  }
+}
+
+function wrapLine(ctx, text, maxWidth) {
+  if (!text) return [''];
+  if (ctx.measureText(text).width <= maxWidth) return [text];
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width <= maxWidth) cur = test;
+    else { if (cur) lines.push(cur); cur = w; }
+  }
+  if (cur) lines.push(cur);
+  return lines;
 }
 
 // Horizontal bar (original render_chapter_bar_flat.py look).
@@ -144,6 +216,12 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
   const { barLeft: bl, barRight: br, barTop: bt, barBottom: bb, corner } = layout;
   const barW = br - bl;
   progress = Math.max(0, Math.min(1, progress));
+
+  // RTL: draw all GEOMETRY mirrored horizontally (first chapter on the right, playhead
+  // moves right→left). Labels are drawn afterwards un-mirrored so the text isn't reversed.
+  const rtl = style.direction === 'rtl';
+  ctx.save();
+  if (rtl) { ctx.translate(bl + br, 0); ctx.scale(-1, 1); }
 
   // 1) Bar background
   ctx.fillStyle = rgba(style.bgRGBA);
@@ -229,7 +307,9 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
     }
   }
 
-  // 6) Labels centered inside each segment, auto-shrink to fit
+  ctx.restore(); // end mirrored geometry
+
+  // 6) Labels centered inside each segment, auto-shrink to fit (drawn un-mirrored)
   const cy = layout.barCenterY;
   const baseSize = layout.fontSize;
   ctx.textAlign = 'center';
@@ -238,7 +318,7 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
   for (const ch of chapters) {
     const segLeft = bl + Math.round(ch.sp * barW);
     const segRight = bl + Math.round(ch.ep * barW);
-    const cx = (segLeft + segRight) / 2;
+    const cx = rtl ? (bl + br) - (segLeft + segRight) / 2 : (segLeft + segRight) / 2;
     const avail = (segRight - segLeft) - 8;
     const text = ch.name;
 

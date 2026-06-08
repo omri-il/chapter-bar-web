@@ -36,8 +36,11 @@ body {
   padding: 0 20px;
   align-items: start;
 }
+/* Preview stays visible while scrolling the controls, so design changes are live. */
+.preview-pane { position: sticky; top: 16px; align-self: start; }
 @media (max-width: 880px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { display: flex; flex-direction: column; }
+  .preview-pane { order: -1; position: sticky; top: 0; z-index: 5; }
 }
 
 .card {
@@ -60,8 +63,8 @@ body {
 .hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }
 .chapters-head {
   display: grid;
-  grid-template-columns: 1fr 90px 40px 32px;
-  gap: 8px;
+  grid-template-columns: 1fr 84px 34px 30px 28px;
+  gap: 6px;
   font-size: 0.78rem;
   color: var(--muted);
   margin-bottom: 6px;
@@ -70,10 +73,15 @@ body {
 .chapters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .chapter-row {
   display: grid;
-  grid-template-columns: 1fr 90px 40px 32px;
-  gap: 8px;
+  grid-template-columns: 1fr 84px 34px 30px 28px;
+  gap: 6px;
   align-items: center;
 }
+.btn-capture {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 7px; cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 6px 0;
+}
+.btn-capture:hover { color: var(--accent); border-color: var(--accent); }
 .chapter-row input[type="text"],
 .chapter-row input[type="text"]::placeholder { text-align: right; }
 .chapter-row .color-cell { display: flex; justify-content: center; }
@@ -138,6 +146,10 @@ input[type="file"] { width: 100%; margin: 8px 0; color: var(--muted); font-size:
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-color: #1c1c1c;
+}
+#previewVideo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; background: #000; display: block;
 }
 #preview { position: relative; width: 100%; height: auto; display: block; }
 

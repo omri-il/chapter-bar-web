@@ -5,7 +5,7 @@
  * transparent canvas in real time and record it. Output is a transparent .webm to
  * drop on V2 in Premiere / Final Cut / Resolve / OBS.
  */
-import { computeLayout, renderFrame, visualProgressFromTime, formatClock } from './bar-engine.js?v=4';
+import { computeLayout, renderFrame, visualProgressFromTime, formatClock } from './bar-engine.js?v=5';
 
 export function isOverlaySupported() {
   return typeof MediaRecorder !== 'undefined'
@@ -26,7 +26,7 @@ export async function exportOverlay(state, { onProgress, onDone, onError } = {})
     onError && onError(e); throw e;
   }
 
-  const { style, width, height, fps, videoLength, chapters } = state;
+  const { style, width, height, fps, videoLength, chapters, subtitles } = state;
   const totalSeconds = videoLength;
   const layout = computeLayout(width, height, style);
 
@@ -48,14 +48,14 @@ export async function exportOverlay(state, { onProgress, onDone, onError } = {})
   const startT = performance.now();
 
   // Draw the first frame immediately so the recorder has content from t=0.
-  renderFrame(ctx, { progress: 0, elapsedSec: 0, chapters, width, height, layout, style });
+  renderFrame(ctx, { progress: 0, elapsedSec: 0, chapters, width, height, layout, style, subtitles });
 
   await new Promise((resolve) => {
     function frame() {
       const elapsed = (performance.now() - startT) / 1000;
       const timeFrac = Math.min(1, elapsed / totalSeconds);
       const progress = visualProgressFromTime(elapsed, chapters);
-      renderFrame(ctx, { progress, elapsedSec: elapsed, chapters, width, height, layout, style });
+      renderFrame(ctx, { progress, elapsedSec: elapsed, chapters, width, height, layout, style, subtitles });
       const remaining = Math.max(0, totalSeconds - elapsed);
       onProgress && onProgress(timeFrac, `מייצר פס ההתקדמות… ${Math.round(timeFrac * 100)}% · נותרו כ-${formatClock(remaining)}`);
       if (elapsed >= totalSeconds) { resolve(); return; }

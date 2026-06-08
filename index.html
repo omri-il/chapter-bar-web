@@ -20,6 +20,17 @@
     <!-- ============ CONTROLS ============ -->
     <section class="controls" aria-label="הגדרות">
 
+      <div class="card" id="uploadCard">
+        <h2>העלאת סרטון (אופציונלי)</h2>
+        <p class="hint">העלו את הסרטון כדי למלא אוטומטית אורך, קצב פריימים ורזולוציה — ולראות תצוגה מקדימה על הסרטון האמיתי שלכם.</p>
+        <input type="file" id="videoFile" accept="video/mp4,video/*" />
+        <p id="videoMeta" class="support-note ok" hidden></p>
+        <label style="display:block; margin-top:12px;">כתוביות (קובץ SRT, אופציונלי)
+          <input type="file" id="srtFile" accept=".srt,text/plain" />
+        </label>
+        <p id="srtMeta" class="support-note ok" hidden></p>
+      </div>
+
       <div class="card">
         <h2>הגדרות סרטון</h2>
         <div class="field-row">
@@ -61,7 +72,7 @@
         </div>
         <p class="hint">לכל פרק כתבו שם ואת המיקום שלו בסרטון. הפרק הראשון מתחיל ב-0:00.</p>
         <div class="chapters-head">
-          <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span>
+          <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span><span></span>
         </div>
         <div id="chapters" class="chapters"></div>
         <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
@@ -115,6 +126,13 @@
 
         <!-- bar-only controls -->
         <div id="barControls">
+          <div class="field-row">
+            <label>כיוון הפס (סדר הפרקים והפלייהד)</label>
+            <div class="seg-toggle" id="barDirection">
+              <button type="button" class="seg active" data-dir="ltr">משמאל לימין ←</button>
+              <button type="button" class="seg" data-dir="rtl">מימין לשמאל →</button>
+            </div>
+          </div>
           <div class="field-row">
             <label>גובה הפס
               <input type="range" id="barHFrac" min="0.03" max="0.2" step="0.005" value="0.09" />
@@ -181,6 +199,27 @@
           </div>
         </div>
       </div>
+
+      <div class="card" id="subtitleCard" hidden>
+        <h2>כתוביות</h2>
+        <p class="hint">הכתוביות מהקובץ שהעליתם — מוצגות מימין לשמאל ונצרבות בסרטון.</p>
+        <div class="field-row two">
+          <label>גודל הכתוביות
+            <input type="range" id="subSizeFrac" min="0.02" max="0.1" step="0.005" value="0.045" />
+          </label>
+          <label>צבע הכתוביות
+            <input type="color" id="subColor" value="#ffffff" />
+          </label>
+        </div>
+        <div class="field-row two">
+          <label>מיקום אנכי (מהתחתית)
+            <input type="range" id="subPosFrac" min="0.08" max="0.6" step="0.01" value="0.18" />
+          </label>
+          <label>שקיפות רקע הכתובית
+            <input type="range" id="subBgOpacity" min="0" max="255" step="5" value="140" />
+          </label>
+        </div>
+      </div>
     </section>
 
     <!-- ============ PREVIEW + EXPORT ============ -->
@@ -189,6 +228,7 @@
         <h2>תצוגה מקדימה</h2>
         <div class="canvas-wrap">
           <div class="checkerboard"></div>
+          <video id="previewVideo" playsinline muted hidden></video>
           <canvas id="preview"></canvas>
         </div>
         <div class="scrubber-row">
@@ -196,6 +236,7 @@
           <input type="range" id="scrub" min="0" max="1000" step="1" value="0" />
           <span id="timeLabel" class="time-label">0:00</span>
         </div>
+        <button type="button" id="captureChapter" class="btn btn-ghost">➕ פרק חדש מהמיקום הנוכחי</button>
       </div>
 
       <div class="card export-card">
@@ -211,8 +252,7 @@
 
         <div class="export-option">
           <h3>סרטון מוכן עם הפס (מומלץ) </h3>
-          <p>בוחרים את קובץ הוידאו שלכם, הפס נצרב עליו, ומקבלים MP4 מוכן להעלאה. הקובץ נשאר במחשב שלכם.</p>
-          <input type="file" id="videoFile" accept="video/mp4,video/*" />
+          <p>העלו את הסרטון למעלה — הפס (והכתוביות, אם יש) ייצרבו עליו ותקבלו MP4 מוכן להעלאה. הקובץ נשאר במחשב שלכם.</p>
           <button type="button" id="exportBurnin" class="btn btn-primary" disabled>צריבת הפס על הסרטון (MP4)</button>
           <p id="burninSupport" class="support-note"></p>
         </div>
@@ -229,6 +269,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=4"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

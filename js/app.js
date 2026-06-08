@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=4';
-import { exportOverlay } from './export-overlay.js?v=4';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=4';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=5';
+import { exportOverlay } from './export-overlay.js?v=5';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=5';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -29,6 +29,13 @@ function formatDuration(sec) {
   const m = Math.floor(sec / 60), s = sec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+// Sub-second precision for captured chapter starts → "m:ss.mmm"
+function formatDurationPrecise(sec) {
+  sec = Math.max(0, sec);
+  const m = Math.floor(sec / 60);
+  const s = sec - m * 60;
+  return `${m}:${s.toFixed(3).padStart(6, '0')}`;
+}
 
 // ---------- DOM ----------
 const $ = (id) => document.getElementById(id);
@@ -38,6 +45,11 @@ const ctx = canvas.getContext('2d');
 
 let widthMode = 'length'; // 'length' | 'equal'
 let layoutMode = 'bar';   // 'bar' | 'circle'
+let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead direction
+
+const previewVideo = $('previewVideo');
+let videoReady = false;   // a video is loaded into the preview
+let srtCues = [];         // parsed subtitle cues
 
 // ---------- chapter rows ----------
 function defaultRows() {
@@ -58,10 +70,16 @@ function addChapterRow(data) {
     <input type="text" class="ch-name" placeholder="שם הפרק" value="${escapeHtml(d.name)}" />
     <input type="text" class="ch-start" placeholder="0:00" value="${escapeHtml(d.start || '')}" />
     <div class="color-cell"><input type="color" class="ch-color" value="${d.hex}" /></div>
+    <button type="button" class="ch-capture btn-capture" title="קבע לזמן הנוכחי בתצוגה">◎</button>
     <button type="button" class="btn-remove" title="הסרה">×</button>
   `;
   row.querySelector('.btn-remove').addEventListener('click', () => {
     row.remove();
+    onFormChange();
+  });
+  row.querySelector('.ch-capture').addEventListener('click', () => {
+    const { videoLength } = getState();
+    row.querySelector('.ch-start').value = formatDurationPrecise(progress * videoLength);
     onFormChange();
   });
   row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onFormChange));
@@ -84,6 +102,7 @@ function readRows() {
 function readStyle() {
   const tc = hexToRgb01($('textColor').value);
   const pc = hexToRgb01($('playheadColor').value);
+  const sc = hexToRgb01($('subColor').value);
   return {
     ...DEFAULT_STYLE,
     barHFrac: parseFloat($('barHFrac').value),
@@ -92,6 +111,7 @@ function readStyle() {
     labelSizeFrac: parseFloat($('labelSizeFrac').value),
     fontFamily: $('fontFamily').value,
     layout: layoutMode,
+    direction: barDirection,
     circleSizeFrac: parseFloat($('circleSizeFrac').value),
     circlePos: $('circlePos').value,
     circleThicknessFrac: parseFloat($('circleThicknessFrac').value),
@@ -100,6 +120,10 @@ function readStyle() {
     bgRGBA: [DEFAULT_STYLE.bgRGBA[0], DEFAULT_STYLE.bgRGBA[1], DEFAULT_STYLE.bgRGBA[2], parseInt($('bgOpacity').value, 10)],
     labelRGBA: [Math.round(tc[0] * 255), Math.round(tc[1] * 255), Math.round(tc[2] * 255), 235],
     playheadRGBA: [Math.round(pc[0] * 255), Math.round(pc[1] * 255), Math.round(pc[2] * 255), 230],
+    subSizeFrac: parseFloat($('subSizeFrac').value),
+    subPosFrac: parseFloat($('subPosFrac').value),
+    subRGBA: [Math.round(sc[0] * 255), Math.round(sc[1] * 255), Math.round(sc[2] * 255), 255],
+    subBgRGBA: [0, 0, 0, parseInt($('subBgOpacity').value, 10)],
   };
 }
 
@@ -115,7 +139,7 @@ function getState() {
   const fps = parseInt($('fps').value, 10);
   const videoLength = Math.max(0.1, parseDuration($('videoLength').value));
   const chapters = buildChapters(rows, widthMode, videoLength, style);
-  return { rows, style, width, height, fps, videoLength, widthMode, chapters };
+  return { rows, style, width, height, fps, videoLength, widthMode, chapters, subtitles: srtCues };
 }
 
 // Make sure a (Google) font is actually downloaded before we render with it on canvas.
@@ -135,16 +159,15 @@ let playing = false;
 let lastTs = 0;
 
 function drawPreview() {
-  const { style, width, height, chapters } = getState();
+  const { style, width, height, chapters, videoLength, subtitles } = getState();
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
   }
   const layout = computeLayout(width, height, style);
-  const { videoLength } = getState();
   const elapsedSec = progress * videoLength;
   const visual = visualProgressFromTime(elapsedSec, chapters);
-  renderFrame(ctx, { progress: visual, elapsedSec, chapters, width, height, layout, style });
+  renderFrame(ctx, { progress: visual, elapsedSec, chapters, width, height, layout, style, subtitles });
   updateTimeLabel();
   validateLengths();
 }
@@ -157,14 +180,20 @@ function updateTimeLabel() {
 
 function loop(ts) {
   if (!playing) return;
-  if (!lastTs) lastTs = ts;
-  const dt = (ts - lastTs) / 1000;
-  lastTs = ts;
   const { videoLength } = getState();
-  progress += dt / videoLength;
-  if (progress >= 1) { progress = 0; }
+  if (videoReady) {
+    // Drive progress from the actual video playback (keeps bar synced to the frame).
+    progress = Math.min(1, previewVideo.currentTime / videoLength);
+    if (previewVideo.ended) { playing = false; $('playBtn').textContent = '▶'; }
+  } else {
+    if (!lastTs) lastTs = ts;
+    const dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    progress += dt / videoLength;
+    if (progress >= 1) { progress = 0; }
+  }
   drawPreview();
-  requestAnimationFrame(loop);
+  if (playing) requestAnimationFrame(loop);
 }
 
 function onFormChange() {
@@ -207,10 +236,113 @@ let pickedFile = null;
 let exporting = false;
 let formValid = true;
 
-$('videoFile').addEventListener('change', (e) => {
+$('videoFile').addEventListener('change', async (e) => {
   pickedFile = e.target.files[0] || null;
   updateExportButtons();
+  if (!pickedFile) {
+    videoReady = false;
+    previewVideo.hidden = true;
+    document.querySelector('.checkerboard').style.display = '';
+    $('videoMeta').hidden = true;
+    drawPreview();
+    return;
+  }
+  try { await probeAndLoadVideo(pickedFile); }
+  catch (err) { console.error(err); }
+  drawPreview();
 });
+
+// Load the picked video into the preview and auto-detect duration / resolution / fps.
+async function probeAndLoadVideo(file) {
+  const url = URL.createObjectURL(file);
+  previewVideo.src = url;
+  previewVideo.hidden = false;
+  await new Promise((res) => {
+    previewVideo.onloadedmetadata = res;
+    previewVideo.onerror = res;
+  });
+  const dur = previewVideo.duration || 0;
+  const vw = previewVideo.videoWidth, vh = previewVideo.videoHeight;
+  if (dur > 0) $('videoLength').value = formatDuration(dur);
+  if (vw && vh) setResolutionOption(vw, vh);
+  const fps = await measureFps(previewVideo);
+  const snapped = fps ? setFpsClosest(fps) : null;
+
+  videoReady = true;
+  document.querySelector('.checkerboard').style.display = 'none';
+  $('videoMeta').hidden = false;
+  $('videoMeta').textContent = `זוהה: ${formatDuration(dur)} · ${vw}×${vh}${snapped ? ` · ${snapped} FPS` : ''}`;
+  progress = 0;
+  previewVideo.currentTime = 0;
+}
+
+function setResolutionOption(w, h) {
+  const sel = $('resolution');
+  let opt = sel.querySelector('option[data-detected]');
+  if (!opt) { opt = document.createElement('option'); opt.dataset.detected = '1'; sel.insertBefore(opt, sel.firstChild); }
+  opt.value = `${w}x${h}`;
+  opt.textContent = `${w}×${h} — הסרטון שלכם`;
+  sel.value = `${w}x${h}`;
+}
+
+function setFpsClosest(fps) {
+  const presets = [24, 25, 30, 50, 60];
+  const nearest = presets.reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+  $('fps').value = String(nearest);
+  return nearest;
+}
+
+// Estimate fps by sampling presented frames over ~0.4s of muted playback.
+function measureFps(video) {
+  return new Promise((resolve) => {
+    if (!video.requestVideoFrameCallback) return resolve(null);
+    let first = null, done = false;
+    const finish = (val) => { if (done) return; done = true; try { video.pause(); video.currentTime = 0; } catch (_) {} resolve(val); };
+    const wasMuted = video.muted; video.muted = true;
+    const onFrame = (now, meta) => {
+      if (first === null) { first = meta; }
+      const df = meta.presentedFrames - first.presentedFrames;
+      const dt = meta.mediaTime - first.mediaTime;
+      if (dt >= 0.4 && df > 2) { video.muted = wasMuted; finish(df / dt); return; }
+      if (!done) video.requestVideoFrameCallback(onFrame);
+    };
+    video.requestVideoFrameCallback(onFrame);
+    video.play().catch(() => finish(null));
+    setTimeout(() => { video.muted = wasMuted; finish(null); }, 2500);
+  });
+}
+
+// ---------- subtitles (SRT) ----------
+$('srtFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) { srtCues = []; $('subtitleCard').hidden = true; $('srtMeta').hidden = true; drawPreview(); return; }
+  const text = await f.text();
+  srtCues = parseSRT(text);
+  $('subtitleCard').hidden = srtCues.length === 0;
+  $('srtMeta').hidden = false;
+  $('srtMeta').textContent = srtCues.length ? `נטענו ${srtCues.length} כתוביות.` : 'לא נמצאו כתוביות בקובץ.';
+  drawPreview();
+});
+
+function parseSRT(text) {
+  const cues = [];
+  const blocks = text.replace(/\r/g, '').split(/\n\n+/);
+  for (const b of blocks) {
+    const lines = b.split('\n').filter((l) => l.trim() !== '');
+    const ti = lines.findIndex((l) => l.includes('-->'));
+    if (ti < 0) continue;
+    const m = lines[ti].match(/(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})/);
+    if (!m) continue;
+    const txt = lines.slice(ti + 1).join('\n');
+    if (txt) cues.push({ startSec: srtTime(m[1]), endSec: srtTime(m[2]), text: txt });
+  }
+  return cues;
+}
+function srtTime(s) {
+  const [hms, ms] = s.replace('.', ',').split(',');
+  const [h, m, sec] = hms.split(':').map(Number);
+  return h * 3600 + m * 60 + sec + (Number(ms) || 0) / 1000;
+}
 
 $('exportBurnin').addEventListener('click', async () => {
   if (!pickedFile) return;
@@ -256,18 +388,42 @@ function validateLengths() {
 function togglePlay(force) {
   playing = force !== undefined ? force : !playing;
   $('playBtn').textContent = playing ? '⏸' : '▶';
+  if (videoReady) {
+    if (playing) { previewVideo.muted = false; previewVideo.play().catch(() => {}); }
+    else { previewVideo.pause(); }
+  }
   if (playing) { lastTs = 0; requestAnimationFrame(loop); }
 }
 $('playBtn').addEventListener('click', () => togglePlay());
 $('scrub').addEventListener('input', (e) => {
   playing = false; $('playBtn').textContent = '▶';
+  if (videoReady) previewVideo.pause();
   progress = e.target.value / 1000;
+  if (videoReady) { const { videoLength } = getState(); previewVideo.currentTime = progress * videoLength; }
   drawPreview();
 });
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac']
+['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
   .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
+
+// "new chapter from current position" capture button (under the scrubber)
+$('captureChapter').addEventListener('click', () => {
+  const { videoLength } = getState();
+  addChapterRow({ name: '', start: formatDurationPrecise(progress * videoLength), hex: PALETTE_HEX[chaptersEl.children.length % PALETTE_HEX.length] });
+  onFormChange();
+  const rows = chaptersEl.querySelectorAll('.chapter-row');
+  rows[rows.length - 1].querySelector('.ch-name').focus();
+});
+
+// direction (LTR / RTL) segmented toggle
+$('barDirection').querySelectorAll('.seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    barDirection = btn.dataset.dir;
+    $('barDirection').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b === btn));
+    drawPreview();
+  });
+});
 
 // layout (bar vs circle) segmented toggle
 $('layout').querySelectorAll('.seg').forEach(btn => {
