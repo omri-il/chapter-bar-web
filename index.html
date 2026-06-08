@@ -26,6 +26,10 @@
             <button type="button" class="seg" data-mode="equal">שווה לכולם</button>
           </div>
         </div>
+        <p class="hint">לכל פרק כתבו שם ואת הזמן שבו הוא <strong>מתחיל</strong> בסרטון (לפי הפלייהד). הפרק הראשון מתחיל ב-0:00.</p>
+        <div class="chapters-head">
+          <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span>
+        </div>
         <div id="chapters" class="chapters"></div>
         <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
       </div>
@@ -33,9 +37,9 @@
       <div class="card">
         <h2>הגדרות סרטון</h2>
         <div class="field-row">
-          <label>אורך כולל (שניות)
-            <input type="number" id="totalSeconds" min="1" step="1" value="60" />
-            <small>נמלא אוטומטית מסכום הפרקים. אפשר להאריך אם יש אינטרו/אאוטרו בלי פס.</small>
+          <label>אורך הסרטון הכולל
+            <input type="text" id="videoLength" placeholder="10:00" value="10:00" />
+            <small>בפורמט דקות:שניות (למשל 10:00 לעשר דקות).</small>
           </label>
         </div>
         <div class="field-row two">

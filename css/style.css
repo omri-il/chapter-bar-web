@@ -56,6 +56,16 @@ body {
 .seg.active { background: var(--accent); color: #fff; font-weight: 600; }
 
 /* ---- Chapters ---- */
+.hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }
+.chapters-head {
+  display: grid;
+  grid-template-columns: 1fr 90px 40px 32px;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
 .chapters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .chapter-row {
   display: grid;

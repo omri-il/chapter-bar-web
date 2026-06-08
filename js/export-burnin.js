@@ -9,7 +9,7 @@
  */
 import MP4Box from 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/+esm';
 import { Muxer, ArrayBufferTarget } from 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs';
-import { computeLayout, renderFrame, visualProgressFromTime } from './bar-engine.js';
+import { computeLayout, renderFrame, visualProgressFromTime, buildChapters } from './bar-engine.js';
 
 export function isBurnInSupported() {
   return typeof VideoDecoder !== 'undefined'
@@ -88,6 +88,9 @@ function demuxVideo(fileBuffer) {
 async function transcodeVideo({ video, muxer, state, onProgress }) {
   const { width, height, durationSec } = video;
   const layout = computeLayout(width, height, state.style);
+  // Rebuild chapters against the REAL video duration so the last chapter ends at the
+  // actual end and start timestamps line up with the user's playhead readings.
+  const chapters = buildChapters(state.rows, state.widthMode, durationSec, state.style);
 
   // Bar drawn on its own transparent canvas, then composited over each video frame.
   const barCanvas = new OffscreenCanvas(width, height);
@@ -114,8 +117,8 @@ async function transcodeVideo({ video, muxer, state, onProgress }) {
   const decoder = new VideoDecoder({
     output: (frame) => {
       const tSec = frame.timestamp / 1e6;
-      const progress = visualProgressFromTime(tSec, state.chapters);
-      renderFrame(barCtx, { progress, chapters: state.chapters, width, height, layout, style: state.style });
+      const progress = visualProgressFromTime(tSec, chapters);
+      renderFrame(barCtx, { progress, chapters, width, height, layout, style: state.style });
       outCtx.drawImage(frame, 0, 0, width, height);
       outCtx.drawImage(barCanvas, 0, 0);
       const outFrame = new VideoFrame(outCanvas, { timestamp: frame.timestamp, duration: frame.duration });

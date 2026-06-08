@@ -36,27 +36,26 @@ const chaptersEl = $('chapters');
 const canvas = $('preview');
 const ctx = canvas.getContext('2d');
 
-let userEditedTotal = false;
 let widthMode = 'length'; // 'length' | 'equal'
 
 // ---------- chapter rows ----------
 function defaultRows() {
   return [
-    { name: 'פתיחה', dur: '0:30', hex: PALETTE_HEX[0] },
-    { name: 'נושא ראשון', dur: '1:00', hex: PALETTE_HEX[1] },
-    { name: 'נושא שני', dur: '1:00', hex: PALETTE_HEX[2] },
-    { name: 'סיכום', dur: '0:30', hex: PALETTE_HEX[3] },
+    { name: 'פתיחה', start: '0:00', hex: PALETTE_HEX[0] },
+    { name: 'נושא ראשון', start: '1:24', hex: PALETTE_HEX[1] },
+    { name: 'נושא שני', start: '3:17', hex: PALETTE_HEX[2] },
+    { name: 'סיכום', start: '8:20', hex: PALETTE_HEX[3] },
   ];
 }
 
 function addChapterRow(data) {
   const idx = chaptersEl.children.length;
-  const d = data || { name: '', dur: '1:00', hex: PALETTE_HEX[idx % PALETTE_HEX.length] };
+  const d = data || { name: '', start: '', hex: PALETTE_HEX[idx % PALETTE_HEX.length] };
   const row = document.createElement('div');
   row.className = 'chapter-row';
   row.innerHTML = `
     <input type="text" class="ch-name" placeholder="שם הפרק" value="${escapeHtml(d.name)}" />
-    <input type="text" class="ch-dur" placeholder="0:00" value="${escapeHtml(d.dur)}" />
+    <input type="text" class="ch-start" placeholder="0:00" value="${escapeHtml(d.start || '')}" />
     <div class="color-cell"><input type="color" class="ch-color" value="${d.hex}" /></div>
     <button type="button" class="btn-remove" title="הסרה">×</button>
   `;
@@ -75,7 +74,7 @@ function escapeHtml(s) {
 function readRows() {
   return [...chaptersEl.querySelectorAll('.chapter-row')].map(row => ({
     name: row.querySelector('.ch-name').value,
-    seconds: parseDuration(row.querySelector('.ch-dur').value),
+    startSec: parseDuration(row.querySelector('.ch-start').value),
     rgb: hexToRgb01(row.querySelector('.ch-color').value),
   }));
 }
@@ -102,9 +101,9 @@ function getState() {
   const style = readStyle();
   const { width, height } = readResolution();
   const fps = parseInt($('fps').value, 10);
-  const totalSeconds = Math.max(0.1, parseFloat($('totalSeconds').value) || 0);
-  const chapters = buildChapters(rows, widthMode, style);
-  return { rows, style, width, height, fps, totalSeconds, widthMode, chapters };
+  const videoLength = Math.max(0.1, parseDuration($('videoLength').value));
+  const chapters = buildChapters(rows, widthMode, videoLength, style);
+  return { rows, style, width, height, fps, videoLength, widthMode, chapters };
 }
 
 // ---------- preview ----------
@@ -119,15 +118,15 @@ function drawPreview() {
     canvas.height = height;
   }
   const layout = computeLayout(width, height, style);
-  const { totalSeconds } = getState();
-  const visual = visualProgressFromTime(progress * totalSeconds, chapters);
+  const { videoLength } = getState();
+  const visual = visualProgressFromTime(progress * videoLength, chapters);
   renderFrame(ctx, { progress: visual, chapters, width, height, layout, style });
   updateTimeLabel();
 }
 
 function updateTimeLabel() {
-  const { totalSeconds } = getState();
-  $('timeLabel').textContent = formatDuration(progress * totalSeconds);
+  const { videoLength } = getState();
+  $('timeLabel').textContent = formatDuration(progress * videoLength);
   $('scrub').value = Math.round(progress * 1000);
 }
 
@@ -136,19 +135,14 @@ function loop(ts) {
   if (!lastTs) lastTs = ts;
   const dt = (ts - lastTs) / 1000;
   lastTs = ts;
-  const { totalSeconds } = getState();
-  progress += dt / totalSeconds;
+  const { videoLength } = getState();
+  progress += dt / videoLength;
   if (progress >= 1) { progress = 0; }
   drawPreview();
   requestAnimationFrame(loop);
 }
 
 function onFormChange() {
-  // auto-fill total length from sum of chapters unless the user edited it
-  if (!userEditedTotal) {
-    const sum = readRows().reduce((s, r) => s + r.seconds, 0);
-    if (sum > 0) $('totalSeconds').value = Math.round(sum);
-  }
   drawPreview();
 }
 
@@ -220,9 +214,8 @@ $('scrub').addEventListener('input', (e) => {
 });
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution']
+['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength']
   .forEach(id => $(id).addEventListener('input', drawPreview));
-$('totalSeconds').addEventListener('input', () => { userEditedTotal = true; drawPreview(); });
 $('addChapter').addEventListener('click', () => { addChapterRow(); onFormChange(); });
 
 // width-mode segmented toggle

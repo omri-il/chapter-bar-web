@@ -26,7 +26,8 @@ export async function exportOverlay(state, { onProgress, onDone, onError } = {})
     onError && onError(e); throw e;
   }
 
-  const { style, width, height, fps, totalSeconds, chapters } = state;
+  const { style, width, height, fps, videoLength, chapters } = state;
+  const totalSeconds = videoLength;
   const layout = computeLayout(width, height, style);
 
   const canvas = document.createElement('canvas');

@@ -9,8 +9,10 @@ It's the shareable, web version of the DaVinci Resolve renderer
 — the exact same bar look (palette, layout, dim/fill math), ported from Pillow to Canvas2D.
 
 ## What it does
-The user enters chapters (name + duration), total length, FPS, resolution, and bar style,
-sees a **live animated preview**, then exports one of two ways.
+The user enters the **total video length**, then each chapter as a **name + the timestamp it
+starts at** (read straight off their video's playhead — same model as YouTube chapters), plus FPS,
+resolution, and bar style. They see a **live animated preview**, then export one of two ways.
+Chapter end = the next chapter's start; the last chapter ends at the video's end.
 
 **Chapter widths** can be either **proportional to each chapter's duration** or **equal for all
 chapters** (toggle in the form). In equal mode the playhead still tracks real time correctly —
@@ -35,8 +37,9 @@ means zero server load and no big-file uploads/downloads — important because t
 has throttled under CPU load before. For burn-in, the user's video stays local.
 
 ## Tech
-- `js/bar-engine.js` — the reusable draw core (port of `compute_layout` + `render_frame`).
-  Hebrew/RTL is handled natively by the Canvas `fillText` bidi (no `python-bidi` needed).
+- `js/bar-engine.js` — the reusable draw core (port of `compute_layout` + `render_frame`),
+  plus `buildChapters(rows, mode, videoLengthSec)` (start-time → segment model) and
+  `visualProgressFromTime()`. Hebrew/RTL is handled natively by the Canvas `fillText` bidi.
 - `js/app.js` — form state, live preview, scrubber, export wiring.
 - `js/export-overlay.js` — transparent WebM via MediaRecorder.
 - `js/export-burnin.js` — MP4 burn-in via mp4box.js (demux) + WebCodecs + mp4-muxer, audio re-encoded.

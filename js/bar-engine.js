@@ -63,30 +63,34 @@ export function computeLayout(width, height, style = DEFAULT_STYLE) {
   };
 }
 
-// Build chapters [{name, sp, ep, durSec, rgb}] from form rows [{name, seconds}].
+// Build chapters [{name, sp, ep, durSec, startSec, endSec, rgb}] from form rows
+// [{name, startSec}] + the total video length. Each chapter STARTS at its startSec
+// (read off the playhead) and ENDS where the next one starts (last one ends at videoLengthSec).
+// Rows are sorted by start time so the bar stays sane even if entered out of order.
 // `mode` controls segment WIDTHS on the bar:
-//   'length' — each segment's width is proportional to its duration (default)
-//   'equal'  — every segment gets the same width (1/N), regardless of duration
-// durSec keeps the real duration so the playhead can still track real time in both modes.
-export function buildChapters(rows, mode = 'length', style = DEFAULT_STYLE) {
-  const n = Math.max(1, rows.length);
-  const sumChapters = rows.reduce((s, r) => s + Math.max(0, r.seconds), 0);
-  const span = Math.max(sumChapters, 0.0001);
-  let cursor = 0;
-  return rows.map((row, i) => {
-    const durSec = Math.max(0, row.seconds);
+//   'length' — width proportional to the chapter's real duration (default)
+//   'equal'  — every segment the same width (1/N), regardless of duration
+export function buildChapters(rows, mode = 'length', videoLengthSec = 0, style = DEFAULT_STYLE) {
+  const span = Math.max(videoLengthSec, 0.0001);
+  const sorted = rows
+    .map((r, i) => ({ name: r.name, startSec: Math.max(0, Math.min(r.startSec || 0, span)), rgb: r.rgb, _i: i }))
+    .sort((a, b) => a.startSec - b.startSec);
+  const n = Math.max(1, sorted.length);
+  return sorted.map((row, i) => {
+    const startSec = row.startSec;
+    const endSec = (i < n - 1) ? sorted[i + 1].startSec : span;
+    const durSec = Math.max(0, endSec - startSec);
     let sp, ep;
     if (mode === 'equal') {
       sp = i / n;
       ep = (i + 1) / n;
     } else {
-      sp = cursor / span;
-      cursor += durSec;
-      ep = cursor / span;
+      sp = startSec / span;
+      ep = endSec / span;
     }
     return {
       name: row.name || `פרק ${i + 1}`,
-      sp, ep, durSec,
+      sp, ep, durSec, startSec, endSec,
       rgb: row.rgb || style.palette[i % style.palette.length],
     };
   });
