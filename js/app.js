@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=10';
-import { exportOverlay } from './export-overlay.js?v=10';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=10';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=11';
+import { exportOverlay } from './export-overlay.js?v=11';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=11';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -45,7 +45,7 @@ const ctx = canvas.getContext('2d');
 
 let widthMode = 'length'; // 'length' | 'equal'
 let layoutMode = 'bar';   // 'bar' | 'circle'
-let barDirection = 'rtl'; // 'ltr' | 'rtl' — chapter order + playhead direction (RTL default for Hebrew)
+let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead direction
 
 const previewVideo = $('previewVideo');
 let videoReady = false;   // a video is loaded into the preview
@@ -251,6 +251,40 @@ $('videoFile').addEventListener('change', async (e) => {
   try { await probeAndLoadVideo(pickedFile); }
   catch (err) { console.error(err); }
   drawPreview();
+});
+
+// Load a video from a pasted URL (works only for direct, CORS-enabled links).
+function toDirectVideoUrl(u) {
+  const m = u.match(/drive\.google\.com\/file\/d\/([^/]+)/) || u.match(/[?&]id=([^&]+)/);
+  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+  return u;
+}
+$('loadUrl').addEventListener('click', async () => {
+  const raw = $('videoUrl').value.trim();
+  if (!raw) return;
+  const meta = $('urlMeta');
+  meta.hidden = false; meta.className = 'support-note'; meta.textContent = 'טוען מהקישור…';
+  try {
+    const resp = await fetch(toDirectVideoUrl(raw), { mode: 'cors' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    if (!/^video\//.test(blob.type) && blob.type !== '' && blob.type !== 'application/octet-stream') {
+      throw new Error('not-video'); // e.g. Drive returned an HTML warning page
+    }
+    pickedFile = new File([blob], 'video-from-link.mp4', { type: blob.type || 'video/mp4' });
+    updateExportButtons();
+    await probeAndLoadVideo(pickedFile);
+    meta.className = 'support-note ok'; meta.textContent = 'נטען בהצלחה!';
+    drawPreview();
+  } catch (err) {
+    meta.className = 'support-note warn';
+    if (/drive\.google\.com/.test(raw)) {
+      meta.textContent = 'לא ניתן לטעון קישור של Google Drive ישירות בדפדפן (מגבלת אבטחה של גוגל). הורידו את הקובץ מהדרייב ואז העלו אותו כקובץ למעלה.';
+    } else {
+      meta.textContent = 'לא ניתן לטעון את הקישור (כנראה בגלל הגבלת CORS של האתר המארח). צריך קישור ישיר לקובץ וידאו, או פשוט להוריד ולהעלות את הקובץ.';
+    }
+    console.error(err);
+  }
 });
 
 // Load the picked video into the preview and auto-detect duration / resolution / fps.
