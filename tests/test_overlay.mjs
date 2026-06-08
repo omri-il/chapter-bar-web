@@ -9,6 +9,7 @@ page.on('console', m => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.
 
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
+await page.evaluate(() => document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')));
 
 // short clip for a fast test — set chapter starts within the 2s length so it validates
 await page.locator('#videoLength').fill('0:02');

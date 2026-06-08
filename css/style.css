@@ -51,6 +51,17 @@ body {
   margin-bottom: 18px;
 }
 .card h2 { margin: 0 0 14px; font-size: 1.15rem; }
+
+/* ---- Collapsible cards ---- */
+.card-toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  background: none; border: none; color: var(--text); font-family: inherit;
+  font-size: 1.15rem; font-weight: 600; cursor: pointer; padding: 0; margin: 0 0 14px; text-align: right;
+}
+.card.collapsed .card-toggle { margin-bottom: 0; }
+.card-toggle .chev { color: var(--muted); transition: transform 0.15s; font-size: 0.85rem; }
+.card.collapsed .card-toggle .chev { transform: rotate(-90deg); }
+.card.collapsed .card-body { display: none; }
 .card h3 { margin: 0 0 6px; font-size: 1rem; }
 .card h3.sub { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); }
 

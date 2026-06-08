@@ -50,6 +50,7 @@ let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead directio
 const previewVideo = $('previewVideo');
 let videoReady = false;   // a video is loaded into the preview
 let srtCues = [];         // parsed subtitle cues
+let scrubbing = false;    // user is dragging the scrubber right now
 
 // ---------- chapter rows ----------
 function defaultRows() {
@@ -175,7 +176,7 @@ function drawPreview() {
 function updateTimeLabel() {
   const { videoLength } = getState();
   $('timeLabel').textContent = formatDuration(progress * videoLength);
-  $('scrub').value = Math.round(progress * 1000);
+  if (!scrubbing) $('scrub').value = Math.round(progress * 1000); // don't fight the user's drag
 }
 
 function loop(ts) {
@@ -395,12 +396,13 @@ function togglePlay(force) {
   if (playing) { lastTs = 0; requestAnimationFrame(loop); }
 }
 $('playBtn').addEventListener('click', () => togglePlay());
+// Seek WITHOUT stopping playback — drag the playhead and keep listening.
+$('scrub').addEventListener('pointerdown', () => { scrubbing = true; });
+['pointerup', 'pointercancel', 'change'].forEach(ev => $('scrub').addEventListener(ev, () => { scrubbing = false; }));
 $('scrub').addEventListener('input', (e) => {
-  playing = false; $('playBtn').textContent = '▶';
-  if (videoReady) previewVideo.pause();
   progress = e.target.value / 1000;
   if (videoReady) { const { videoLength } = getState(); previewVideo.currentTime = progress * videoLength; }
-  drawPreview();
+  if (!playing) drawPreview(); // while playing, the loop already redraws every frame
 });
 
 // ---------- bind global controls ----------
@@ -472,7 +474,31 @@ $('widthMode').querySelectorAll('.seg').forEach(btn => {
   }
 })();
 
+// ---------- collapsible cards ----------
+function makeCollapsible(card, open) {
+  if (!card) return;
+  const h2 = card.querySelector(':scope > h2');
+  if (!h2) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'card-toggle';
+  btn.innerHTML = `<span>${h2.textContent}</span><span class="chev">▾</span>`;
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  while (h2.nextSibling) body.appendChild(h2.nextSibling);
+  card.replaceChild(btn, h2);
+  card.appendChild(body);
+  card.classList.toggle('collapsed', !open);
+  btn.addEventListener('click', () => card.classList.toggle('collapsed'));
+}
+
 // ---------- init ----------
 defaultRows().forEach(addChapterRow);
 onFormChange();
 drawPreview();
+
+// Make the control cards foldable to reduce clutter. Order in DOM:
+// upload, video settings, chapters, display style, design, subtitles.
+const ctrlOpen = [true, true, true, true, false, true];
+[...document.querySelectorAll('.controls > .card')].forEach((c, i) => makeCollapsible(c, ctrlOpen[i] ?? true));
+makeCollapsible(document.querySelector('.export-card'), false);

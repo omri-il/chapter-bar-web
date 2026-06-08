@@ -7,6 +7,7 @@ page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.text()); });
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
+await page.evaluate(() => document.querySelectorAll(".card.collapsed").forEach(c => c.classList.remove("collapsed")));
 
 // set video length + chapter start times suited to the 3s sample
 await page.locator('#videoLength').fill('0:03');

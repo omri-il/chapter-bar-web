@@ -6,6 +6,7 @@ const errors = [];
 page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1000);
+await page.evaluate(() => document.querySelectorAll(".card.collapsed").forEach(c => c.classList.remove("collapsed")));
 await page.locator('.seg[data-layout="circle"]').click();
 await page.locator('#videoLength').fill('0:15');
 const starts = await page.$$('.ch-start');

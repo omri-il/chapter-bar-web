@@ -6,6 +6,7 @@ const seen = new Set();
 page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
+await page.evaluate(() => document.querySelectorAll(".card.collapsed").forEach(c => c.classList.remove("collapsed")));
 await page.locator('#videoLength').fill('0:15');
 const starts = await page.$$('.ch-start');
 const vals = ['0:00','0:04','0:09','0:12'];

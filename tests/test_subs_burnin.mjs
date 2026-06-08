@@ -6,6 +6,7 @@ const errors = [];
 page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
+await page.evaluate(() => document.querySelectorAll(".card.collapsed").forEach(c => c.classList.remove("collapsed")));
 await page.locator('#videoFile').setInputFiles('C:/tmp/sample15.mp4');
 await page.waitForTimeout(2500);
 await page.locator('#srtFile').setInputFiles('C:/tmp/test.srt');
