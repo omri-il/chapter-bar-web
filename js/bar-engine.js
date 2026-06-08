@@ -322,33 +322,41 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
 
   ctx.restore(); // end mirrored geometry
 
-  // 6) Labels centered inside each segment, auto-shrink to fit (drawn un-mirrored)
+  // 6) Labels — ONE uniform size for all chapters (drawn un-mirrored).
   const cy = layout.barCenterY;
-  const baseSize = layout.fontSize;
+  const baseSize = layout.fontSize; // upper bound from the labelSizeFrac slider
+  const FLOOR = 10;
+  const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.direction = 'rtl'; // browser bidi handles Hebrew/Arabic/mixed
-  for (const ch of chapters) {
+
+  // Pass 1 — find the largest size (<= baseSize) that fits EVERY label in its segment.
+  const segs = chapters.map(ch => {
     const segLeft = bl + Math.round(ch.sp * barW);
     const segRight = bl + Math.round(ch.ep * barW);
-    const cx = rtl ? (bl + br) - (segLeft + segRight) / 2 : (segLeft + segRight) / 2;
-    const avail = (segRight - segLeft) - 8;
-    const text = ch.name;
-
-    const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
-    let size = baseSize, tw = Infinity;
-    while (size >= 10) {
+    return { ch, segLeft, segRight, avail: (segRight - segLeft) - 8 };
+  }).filter(s => s.segRight > s.segLeft && s.ch.name);
+  let uniformSize = baseSize;
+  for (const s of segs) {
+    let size = baseSize;
+    while (size > FLOOR) {
       ctx.font = `bold ${size}px ${family}`;
-      tw = ctx.measureText(text).width;
-      if (tw <= avail) break;
-      size -= 2;
+      if (ctx.measureText(s.ch.name).width <= s.avail) break;
+      size -= 1;
     }
-    if (tw > avail) continue; // too narrow even at min size
+    if (size < uniformSize) uniformSize = size;
+  }
 
+  // Pass 2 — draw all labels at the uniform size.
+  ctx.font = `bold ${uniformSize}px ${family}`;
+  for (const s of segs) {
+    if (ctx.measureText(s.ch.name).width > s.avail) continue; // still doesn't fit → skip just this one
+    const cx = rtl ? (bl + br) - (s.segLeft + s.segRight) / 2 : (s.segLeft + s.segRight) / 2;
     ctx.fillStyle = rgba(style.labelShadowRGBA);
-    ctx.fillText(text, cx + 1, cy + 1);
+    ctx.fillText(s.ch.name, cx + 1, cy + 1);
     ctx.fillStyle = rgba(style.labelRGBA);
-    ctx.fillText(text, cx, cy);
+    ctx.fillText(s.ch.name, cx, cy);
   }
 
   if (cropped) ctx.restore(); // end crop clip
