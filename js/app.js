@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=16';
-import { exportOverlay } from './export-overlay.js?v=16';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=16';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=17';
+import { exportOverlay } from './export-overlay.js?v=17';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=17';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -81,10 +81,28 @@ function addChapterRow(data) {
   row.querySelector('.ch-capture').addEventListener('click', () => {
     const { videoLength } = getState();
     row.querySelector('.ch-start').value = formatDurationPrecise(progress * videoLength);
+    sortChapterRows();
     onFormChange();
   });
   row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onFormChange));
+  // re-sort when the user finishes editing a start time (on blur, not per keystroke)
+  row.querySelector('.ch-start').addEventListener('change', () => { sortChapterRows(); onFormChange(); });
   chaptersEl.appendChild(row);
+  return row;
+}
+
+// Order the chapter rows in the list by their start time. Empty starts go last
+// (so a freshly-added blank row stays at the bottom until you fill it).
+function sortChapterRows() {
+  const rows = [...chaptersEl.querySelectorAll('.chapter-row')];
+  rows.sort((a, b) => {
+    const sa = a.querySelector('.ch-start').value.trim();
+    const sb = b.querySelector('.ch-start').value.trim();
+    const va = sa === '' ? Infinity : parseDuration(sa);
+    const vb = sb === '' ? Infinity : parseDuration(sb);
+    return va - vb;
+  });
+  rows.forEach(r => chaptersEl.appendChild(r));
 }
 
 function escapeHtml(s) {
@@ -441,10 +459,10 @@ $('resetChapters').addEventListener('click', () => {
 // "new chapter from current position" capture button (under the scrubber)
 $('captureChapter').addEventListener('click', () => {
   const { videoLength } = getState();
-  addChapterRow({ name: '', start: formatDurationPrecise(progress * videoLength), hex: PALETTE_HEX[chaptersEl.children.length % PALETTE_HEX.length] });
+  const row = addChapterRow({ name: '', start: formatDurationPrecise(progress * videoLength), hex: PALETTE_HEX[chaptersEl.children.length % PALETTE_HEX.length] });
+  sortChapterRows();        // drop the new chapter into its time-ordered position
   onFormChange();
-  const rows = chaptersEl.querySelectorAll('.chapter-row');
-  rows[rows.length - 1].querySelector('.ch-name').focus();
+  row.querySelector('.ch-name').focus();
 });
 
 // direction (LTR / RTL) segmented toggle
