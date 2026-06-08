@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=5';
-import { exportOverlay } from './export-overlay.js?v=5';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=5';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=6';
+import { exportOverlay } from './export-overlay.js?v=6';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=6';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -421,9 +421,11 @@ $('barDirection').querySelectorAll('.seg').forEach(btn => {
   btn.addEventListener('click', () => {
     barDirection = btn.dataset.dir;
     $('barDirection').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b === btn));
+    $('scrub').dir = barDirection;  // keep the scrubber thumb moving the same way as the bar
     drawPreview();
   });
 });
+$('scrub').dir = barDirection; // initial
 
 // layout (bar vs circle) segmented toggle
 $('layout').querySelectorAll('.seg').forEach(btn => {
