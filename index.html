@@ -7,7 +7,7 @@
   <meta name="description" content="כלי חינמי ליצירת פס התקדמות פרקים לסרטוני יוטיוב — בלי תוכנות עריכה. הכל רץ בדפדפן." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Rubik:wght@400;700&family=Assistant:wght@400;700&family=Alef:wght@400;700&family=Secular+One&family=Frank+Ruhl+Libre:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -21,28 +21,11 @@
     <section class="controls" aria-label="הגדרות">
 
       <div class="card">
-        <h2>הפרקים</h2>
-        <div class="field-row">
-          <label>רוחב הפרקים בפס</label>
-          <div class="seg-toggle" id="widthMode">
-            <button type="button" class="seg active" data-mode="length">לפי האורך</button>
-            <button type="button" class="seg" data-mode="equal">שווה לכולם</button>
-          </div>
-        </div>
-        <p class="hint">לכל פרק כתבו שם ואת המיקום שלו בסרטון. הפרק הראשון מתחיל ב-0:00.</p>
-        <div class="chapters-head">
-          <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span>
-        </div>
-        <div id="chapters" class="chapters"></div>
-        <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
-      </div>
-
-      <div class="card">
         <h2>הגדרות סרטון</h2>
         <div class="field-row">
           <label>אורך הסרטון הכולל
             <input type="text" id="videoLength" placeholder="10:00" value="10:00" />
-            <small>בפורמט דקות:שניות (למשל 10:00 לעשר דקות).</small>
+            <small>קודם כל — כמה זמן הסרטון? בפורמט דקות:שניות (למשל 10:00). אחר כך סמנו את הפרקים.</small>
           </label>
           <p id="lengthWarn" class="support-note warn" hidden></p>
         </div>
@@ -68,6 +51,23 @@
       </div>
 
       <div class="card">
+        <h2>הפרקים</h2>
+        <div class="field-row">
+          <label>רוחב הפרקים בפס</label>
+          <div class="seg-toggle" id="widthMode">
+            <button type="button" class="seg active" data-mode="length">לפי האורך</button>
+            <button type="button" class="seg" data-mode="equal">שווה לכולם</button>
+          </div>
+        </div>
+        <p class="hint">לכל פרק כתבו שם ואת המיקום שלו בסרטון. הפרק הראשון מתחיל ב-0:00.</p>
+        <div class="chapters-head">
+          <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span>
+        </div>
+        <div id="chapters" class="chapters"></div>
+        <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
+      </div>
+
+      <div class="card">
         <h2>סגנון התצוגה</h2>
         <div class="seg-toggle" id="layout">
           <button type="button" class="seg active" data-layout="bar">פס אופקי</button>
@@ -89,12 +89,23 @@
           <label>גופן הטקסט
             <select id="fontFamily">
               <option value="Arial" selected>ברירת מחדל (Arial)</option>
-              <option value="Heebo">Heebo</option>
-              <option value="Rubik">Rubik</option>
-              <option value="Assistant">Assistant</option>
-              <option value="Alef">Alef</option>
-              <option value="Secular One">Secular One</option>
-              <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+              <optgroup label="ללא תווית (Sans)">
+                <option value="Heebo">Heebo (דומה ל-Google Sans)</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Noto Sans Hebrew">Noto Sans</option>
+                <option value="Assistant">Assistant</option>
+                <option value="Rubik">Rubik</option>
+                <option value="Alef">Alef</option>
+                <option value="Miriam Libre">Miriam Libre</option>
+              </optgroup>
+              <optgroup label="עיצוביים / כותרת">
+                <option value="Secular One">Secular One</option>
+                <option value="Suez One">Suez One</option>
+                <option value="Karantina">Karantina</option>
+                <option value="Bellefair">Bellefair</option>
+                <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+                <option value="David Libre">David Libre</option>
+              </optgroup>
             </select>
           </label>
           <label>צבע הטקסט
