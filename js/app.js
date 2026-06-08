@@ -37,6 +37,7 @@ const canvas = $('preview');
 const ctx = canvas.getContext('2d');
 
 let widthMode = 'length'; // 'length' | 'equal'
+let layoutMode = 'bar';   // 'bar' | 'circle'
 
 // ---------- chapter rows ----------
 function defaultRows() {
@@ -81,13 +82,24 @@ function readRows() {
 
 // ---------- state assembly ----------
 function readStyle() {
+  const tc = hexToRgb01($('textColor').value);
+  const pc = hexToRgb01($('playheadColor').value);
   return {
     ...DEFAULT_STYLE,
     barHFrac: parseFloat($('barHFrac').value),
     barYCenterFrac: parseFloat($('barYCenterFrac').value),
     cornerRadiusFrac: parseFloat($('cornerRadiusFrac').value),
     labelSizeFrac: parseFloat($('labelSizeFrac').value),
+    fontFamily: $('fontFamily').value,
+    layout: layoutMode,
+    circleSizeFrac: parseFloat($('circleSizeFrac').value),
+    circlePos: $('circlePos').value,
+    circleThicknessFrac: parseFloat($('circleThicknessFrac').value),
+    playheadStyle: $('playheadStyle').value,
+    playheadWidthFrac: parseFloat($('playheadWidthFrac').value),
     bgRGBA: [DEFAULT_STYLE.bgRGBA[0], DEFAULT_STYLE.bgRGBA[1], DEFAULT_STYLE.bgRGBA[2], parseInt($('bgOpacity').value, 10)],
+    labelRGBA: [Math.round(tc[0] * 255), Math.round(tc[1] * 255), Math.round(tc[2] * 255), 235],
+    playheadRGBA: [Math.round(pc[0] * 255), Math.round(pc[1] * 255), Math.round(pc[2] * 255), 230],
   };
 }
 
@@ -106,6 +118,17 @@ function getState() {
   return { rows, style, width, height, fps, videoLength, widthMode, chapters };
 }
 
+// Make sure a (Google) font is actually downloaded before we render with it on canvas.
+async function ensureFontLoaded(family) {
+  if (!document.fonts || family === 'Arial') return;
+  try {
+    await Promise.all([
+      document.fonts.load(`bold 48px "${family}"`),
+      document.fonts.load(`400 48px "${family}"`),
+    ]);
+  } catch (_) { /* fall back to whatever is available */ }
+}
+
 // ---------- preview ----------
 let progress = 0;       // 0..1
 let playing = false;
@@ -119,8 +142,9 @@ function drawPreview() {
   }
   const layout = computeLayout(width, height, style);
   const { videoLength } = getState();
-  const visual = visualProgressFromTime(progress * videoLength, chapters);
-  renderFrame(ctx, { progress: visual, chapters, width, height, layout, style });
+  const elapsedSec = progress * videoLength;
+  const visual = visualProgressFromTime(elapsedSec, chapters);
+  renderFrame(ctx, { progress: visual, elapsedSec, chapters, width, height, layout, style });
   updateTimeLabel();
 }
 
@@ -172,6 +196,7 @@ $('exportOverlay').addEventListener('click', async () => {
   playing = false;
   try {
     setExporting(true);
+    await ensureFontLoaded(state.style.fontFamily);
     await exportOverlay(state, { onProgress, onDone, onError });
   } catch (e) { onError(e); }
   finally { setExporting(false); if (wasPlaying) togglePlay(true); }
@@ -189,6 +214,7 @@ $('exportBurnin').addEventListener('click', async () => {
   playing = false;
   try {
     setExporting(true);
+    await ensureFontLoaded(state.style.fontFamily);
     await burnIn(pickedFile, state, { onProgress, onDone, onError });
   } catch (e) { onError(e); }
   finally { setExporting(false); }
@@ -214,8 +240,31 @@ $('scrub').addEventListener('input', (e) => {
 });
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength']
+['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac']
   .forEach(id => $(id).addEventListener('input', drawPreview));
+
+// layout (bar vs circle) segmented toggle
+$('layout').querySelectorAll('.seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    layoutMode = btn.dataset.layout;
+    $('layout').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b === btn));
+    $('barControls').hidden = layoutMode !== 'bar';
+    $('circleControls').hidden = layoutMode !== 'circle';
+    $('layoutHint').textContent = layoutMode === 'circle'
+      ? 'מחוון עגול שמראה את הפרק הנוכחי וספירה לאחור — ממוקם בפינת הסרטון.'
+      : 'פס התקדמות אופקי לרוחב הסרטון.';
+    drawPreview();
+  });
+});
+$('fontFamily').addEventListener('change', async () => {
+  await ensureFontLoaded($('fontFamily').value);
+  drawPreview();
+});
+
+// Redraw once the Google fonts have finished loading so the preview uses them.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(drawPreview);
+}
 $('addChapter').addEventListener('click', () => { addChapterRow(); onFormChange(); });
 
 // width-mode segmented toggle

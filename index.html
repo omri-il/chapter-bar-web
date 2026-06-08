@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>מחולל פס התקדמות פרקים | Chapter Progress Bar</title>
   <meta name="description" content="כלי חינמי ליצירת פס התקדמות פרקים לסרטוני יוטיוב — בלי תוכנות עריכה. הכל רץ בדפדפן." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Rubik:wght@400;700&family=Assistant:wght@400;700&family=Alef:wght@400;700&family=Secular+One&family=Frank+Ruhl+Libre:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -64,31 +67,106 @@
       </div>
 
       <div class="card">
-        <h2>עיצוב הפס</h2>
-        <div class="field-row">
-          <label>גובה הפס
-            <input type="range" id="barHFrac" min="0.03" max="0.2" step="0.005" value="0.09" />
-          </label>
+        <h2>סגנון התצוגה</h2>
+        <div class="seg-toggle" id="layout">
+          <button type="button" class="seg active" data-layout="bar">פס אופקי</button>
+          <button type="button" class="seg" data-layout="circle">עיגול (פומודורו)</button>
         </div>
-        <div class="field-row">
-          <label>מרחק מתחתית הפריים
-            <input type="range" id="barYCenterFrac" min="0.02" max="0.45" step="0.005" value="0.08" />
-          </label>
-        </div>
+        <p class="hint" id="layoutHint">פס התקדמות אופקי לרוחב הסרטון.</p>
+      </div>
+
+      <div class="card">
+        <h2>עיצוב</h2>
+
+        <!-- shared controls -->
         <div class="field-row">
           <label>שקיפות רקע
             <input type="range" id="bgOpacity" min="0" max="255" step="5" value="190" />
           </label>
         </div>
-        <div class="field-row">
-          <label>גודל טקסט (יחסית לגובה הפס)
-            <input type="range" id="labelSizeFrac" min="0.2" max="0.7" step="0.02" value="0.42" />
+        <div class="field-row two">
+          <label>גופן הטקסט
+            <select id="fontFamily">
+              <option value="Arial" selected>ברירת מחדל (Arial)</option>
+              <option value="Heebo">Heebo</option>
+              <option value="Rubik">Rubik</option>
+              <option value="Assistant">Assistant</option>
+              <option value="Alef">Alef</option>
+              <option value="Secular One">Secular One</option>
+              <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+            </select>
+          </label>
+          <label>צבע הטקסט
+            <input type="color" id="textColor" value="#ffffff" />
           </label>
         </div>
-        <div class="field-row">
-          <label>עיגול פינות
-            <input type="range" id="cornerRadiusFrac" min="0" max="0.5" step="0.02" value="0" />
-          </label>
+
+        <!-- bar-only controls -->
+        <div id="barControls">
+          <div class="field-row">
+            <label>גובה הפס
+              <input type="range" id="barHFrac" min="0.03" max="0.2" step="0.005" value="0.09" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>מרחק מתחתית הפריים
+              <input type="range" id="barYCenterFrac" min="0.02" max="0.45" step="0.005" value="0.08" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>גודל טקסט (יחסית לגובה הפס)
+              <input type="range" id="labelSizeFrac" min="0.2" max="0.7" step="0.02" value="0.42" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>עיגול פינות
+              <input type="range" id="cornerRadiusFrac" min="0" max="0.5" step="0.02" value="0" />
+            </label>
+          </div>
+
+          <h3 class="sub">סמן ההתקדמות (פלייהד)</h3>
+          <div class="field-row two">
+            <label>צורת הסמן
+              <select id="playheadStyle">
+                <option value="bar" selected>פס מעוגל</option>
+                <option value="line">קו דק</option>
+                <option value="triangle">משולש</option>
+                <option value="circle">עיגול</option>
+                <option value="none">ללא סמן</option>
+              </select>
+            </label>
+            <label>צבע הסמן
+              <input type="color" id="playheadColor" value="#ffffff" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>עובי הסמן
+              <input type="range" id="playheadWidthFrac" min="0.02" max="0.4" step="0.01" value="0.08" />
+            </label>
+          </div>
+        </div>
+
+        <!-- circle-only controls -->
+        <div id="circleControls" hidden>
+          <div class="field-row two">
+            <label>גודל העיגול
+              <input type="range" id="circleSizeFrac" min="0.1" max="0.6" step="0.01" value="0.22" />
+            </label>
+            <label>מיקום העיגול
+              <select id="circlePos">
+                <option value="br" selected>למטה-ימין</option>
+                <option value="bl">למטה-שמאל</option>
+                <option value="tr">למעלה-ימין</option>
+                <option value="tl">למעלה-שמאל</option>
+                <option value="center">מרכז</option>
+              </select>
+            </label>
+          </div>
+          <div class="field-row">
+            <label>עובי הטבעת
+              <input type="range" id="circleThicknessFrac" min="0.06" max="0.5" step="0.02" value="0.16" />
+            </label>
+          </div>
         </div>
       </div>
     </section>
@@ -113,14 +191,14 @@
 
         <div class="export-option">
           <h3>שכבת שקיפות (לעורכי וידאו) </h3>
-          <p>קובץ WebM שקוף — גוררים מעל הסרטון בפרימייר / פיינל קאט / דה-וינצ'י. <strong>לא מתאים ל-CapCut.</strong> ההקלטה מתבצעת בזמן אמת, אז סרטון ארוך ייקח זמן.</p>
+          <p>קובץ WebM שקוף — גוררים מעל הסרטון בעורך הווידאו שלכם (פרימייר / פיינל קאט / דה-וינצ'י). ההקלטה מתבצעת בזמן אמת, אז סרטון ארוך ייקח זמן.</p>
           <button type="button" id="exportOverlay" class="btn btn-primary">ייצוא שכבה שקופה (WebM)</button>
         </div>
 
         <hr />
 
         <div class="export-option">
-          <h3>סרטון מוכן עם הפס (מומלץ ל-CapCut) </h3>
+          <h3>סרטון מוכן עם הפס (מומלץ) </h3>
           <p>בוחרים את קובץ הוידאו שלכם, הפס נצרב עליו, ומקבלים MP4 מוכן להעלאה. הקובץ נשאר במחשב שלכם.</p>
           <input type="file" id="videoFile" accept="video/mp4,video/*" />
           <button type="button" id="exportBurnin" class="btn btn-primary" disabled>צריבת הפס על הסרטון (MP4)</button>

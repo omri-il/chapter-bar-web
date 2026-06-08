@@ -11,8 +11,8 @@ await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' }
 await page.waitForTimeout(800);
 
 // short clip for a fast test
-await page.locator('#totalSeconds').fill('2');
-await page.locator('#totalSeconds').dispatchEvent('input');
+await page.locator('#videoLength').fill('0:02');
+await page.locator('#videoLength').dispatchEvent('input');
 
 const downloadPromise = page.waitForEvent('download', { timeout: 60000 }).catch(() => null);
 await page.locator('#exportOverlay').click();

@@ -9,12 +9,21 @@
 // === DEFAULT STYLE (mirrors the constants block in render_chapter_bar_flat.py) ===
 // All "frac" values are fractions of frame height/width, so the bar scales with resolution.
 export const DEFAULT_STYLE = {
+  layout: 'bar',          // 'bar' (horizontal) | 'circle' (Pomodoro-style indicator)
+  // --- circle layout ---
+  circleSizeFrac: 0.22,   // diameter as fraction of frame height
+  circlePos: 'br',        // 'tl' | 'tr' | 'bl' | 'br' | 'center'
+  circleThicknessFrac: 0.16, // ring thickness as fraction of radius
+  // --- bar layout ---
   barYCenterFrac: 0.08,   // distance from BOTTOM to bar center (fraction of height)
   barHFrac: 0.09,         // bar height (fraction of height)
   barLeftFrac: 0.0,
   barWFrac: 1.0,
   cornerRadiusFrac: 0.0,  // outer corner radius (fraction of bar height); 0 = straight
   labelSizeFrac: 0.42,    // label font size as fraction of bar height
+  fontFamily: 'Arial',    // label font family (primary name; sans-serif appended as fallback)
+  playheadStyle: 'bar',   // 'bar' | 'line' | 'triangle' | 'circle' | 'none'
+  playheadWidthFrac: 0.08, // marker thickness as fraction of bar height
   dim: 0.35,              // brightness factor for the unfilled part of a chapter
   bgRGBA: [22, 22, 28, 190],
   dividerRGBA: [255, 255, 255, 140],
@@ -116,10 +125,21 @@ export function visualProgressFromTime(elapsedSec, chapters) {
   return 1;
 }
 
-// Port of render_frame() — draws one frame onto a 2D context.
-// progress is 0..1 across the WHOLE video (totalFrames), independent of the bar span.
-export function renderFrame(ctx, { progress, chapters, width, height, layout, style = DEFAULT_STYLE }) {
-  ctx.clearRect(0, 0, width, height);
+// Entry point — clears the canvas and draws the chosen layout.
+// opts: { progress (0..1 visual), elapsedSec (real seconds), chapters, width, height, layout, style }
+export function renderFrame(ctx, opts) {
+  const style = opts.style || DEFAULT_STYLE;
+  ctx.clearRect(0, 0, opts.width, opts.height);
+  if ((style.layout || 'bar') === 'circle') {
+    renderCircle(ctx, opts);
+  } else {
+    renderBar(ctx, opts);
+  }
+}
+
+// Horizontal bar (original render_chapter_bar_flat.py look).
+// progress is 0..1 across the WHOLE video, independent of the bar span.
+function renderBar(ctx, { progress, chapters, width, height, layout, style = DEFAULT_STYLE }) {
 
   const { barLeft: bl, barRight: br, barTop: bt, barBottom: bb, corner } = layout;
   const barW = br - bl;
@@ -181,12 +201,33 @@ export function renderFrame(ctx, { progress, chapters, width, height, layout, st
     ctx.stroke();
   }
 
-  // 5) Playhead
-  const px = bl + Math.round(progress * barW);
-  const phW = Math.max(2, Math.round(layout.barH * 0.08));
-  ctx.fillStyle = rgba(style.playheadRGBA);
-  roundRect(ctx, px - Math.floor(phW / 2), bt - 3, px + Math.floor(phW / 2), bb + 3, Math.max(1, Math.floor(phW / 2)));
-  ctx.fill();
+  // 5) Playhead / progress marker
+  const ph = style.playheadStyle || 'bar';
+  if (ph !== 'none') {
+    const px = bl + Math.round(progress * barW);
+    const phW = Math.max(2, Math.round(layout.barH * (style.playheadWidthFrac ?? 0.08)));
+    const midY = (bt + bb) / 2;
+    ctx.fillStyle = rgba(style.playheadRGBA);
+    if (ph === 'line') {
+      ctx.fillRect(px - Math.floor(phW / 2), bt, phW, bb - bt);
+    } else if (ph === 'circle') {
+      const r = Math.max(4, phW);
+      ctx.beginPath();
+      ctx.arc(px, midY, r, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (ph === 'triangle') {
+      const s = Math.max(6, phW * 1.6);
+      ctx.beginPath();           // downward pointer sitting just above the bar
+      ctx.moveTo(px - s, bt - s);
+      ctx.lineTo(px + s, bt - s);
+      ctx.lineTo(px, bt + 2);
+      ctx.closePath();
+      ctx.fill();
+    } else { // 'bar' (rounded, slight overhang top/bottom)
+      roundRect(ctx, px - Math.floor(phW / 2), bt - 3, px + Math.floor(phW / 2), bb + 3, Math.max(1, Math.floor(phW / 2)));
+      ctx.fill();
+    }
+  }
 
   // 6) Labels centered inside each segment, auto-shrink to fit
   const cy = layout.barCenterY;
@@ -201,9 +242,10 @@ export function renderFrame(ctx, { progress, chapters, width, height, layout, st
     const avail = (segRight - segLeft) - 8;
     const text = ch.name;
 
+    const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
     let size = baseSize, tw = Infinity;
     while (size >= 10) {
-      ctx.font = `bold ${size}px Arial, "Segoe UI", sans-serif`;
+      ctx.font = `bold ${size}px ${family}`;
       tw = ctx.measureText(text).width;
       if (tw <= avail) break;
       size -= 2;
@@ -215,6 +257,106 @@ export function renderFrame(ctx, { progress, chapters, width, height, layout, st
     ctx.fillStyle = rgba(style.labelRGBA);
     ctx.fillText(text, cx, cy);
   }
+}
+
+// Circle / Pomodoro-style indicator: shows the CURRENT chapter's name + a countdown,
+// with a ring that depletes as the chapter progresses. Uses real elapsedSec.
+function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DEFAULT_STYLE }) {
+  if (!chapters.length) return;
+
+  // Find the active chapter by real time.
+  let active = chapters[0];
+  for (const ch of chapters) {
+    if (elapsedSec >= ch.startSec && elapsedSec < ch.endSec) { active = ch; break; }
+    if (elapsedSec >= ch.endSec) active = ch; // past the end -> last seen chapter
+  }
+  const remaining = Math.max(0, active.endSec - elapsedSec);
+  const fracRemaining = active.durSec > 0 ? Math.max(0, Math.min(1, remaining / active.durSec)) : 0;
+
+  // Geometry
+  const diameter = Math.round(style.circleSizeFrac * height);
+  const R = diameter / 2;
+  const thickness = Math.max(3, Math.round(R * style.circleThicknessFrac));
+  const margin = Math.round(R * 0.35);
+  let cx, cy;
+  switch (style.circlePos) {
+    case 'tl': cx = margin + R; cy = margin + R; break;
+    case 'tr': cx = width - margin - R; cy = margin + R; break;
+    case 'bl': cx = margin + R; cy = height - margin - R; break;
+    case 'center': cx = width / 2; cy = height / 2; break;
+    case 'br':
+    default: cx = width - margin - R; cy = height - margin - R; break;
+  }
+
+  const ringR = R - thickness / 2;
+  const bright = scaleColor(active.rgb, 1.0);
+  const dim = scaleColor(active.rgb, style.dim);
+
+  // 1) Background disc
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fillStyle = rgba(style.bgRGBA);
+  ctx.fill();
+
+  // 2) Ring track (full, dim)
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+  ctx.strokeStyle = rgba([...dim, 230]);
+  ctx.lineWidth = thickness;
+  ctx.stroke();
+
+  // 3) Depleting arc (bright) — starts full at the top, shrinks clockwise as time passes
+  if (fracRemaining > 0) {
+    const start = -Math.PI / 2;
+    const end = start + fracRemaining * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, start, end);
+    ctx.strokeStyle = rgba([...bright, 250]);
+    ctx.lineWidth = thickness;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
+
+  // 4) Text inside — countdown (big) + chapter name (above)
+  const inner = (ringR - thickness / 2) * 2; // usable inner width
+  const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+
+  const r = Math.ceil(remaining);
+  const timer = `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`;
+
+  // chapter name (auto-shrink to fit inner width)
+  let nameSize = Math.max(10, Math.round(R * 0.26));
+  const nameText = active.name || '';
+  while (nameSize >= 8) {
+    ctx.font = `bold ${nameSize}px ${family}`;
+    if (ctx.measureText(nameText).width <= inner * 0.92) break;
+    nameSize -= 1;
+  }
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = rgba(style.labelShadowRGBA);
+  ctx.fillText(nameText, cx + 1, cy - R * 0.12 + 1);
+  ctx.fillStyle = rgba(style.labelRGBA);
+  ctx.fillText(nameText, cx, cy - R * 0.12);
+
+  // countdown timer (big)
+  const timerSize = Math.max(12, Math.round(R * 0.5));
+  ctx.font = `bold ${timerSize}px ${family}`;
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = rgba(style.labelShadowRGBA);
+  ctx.fillText(timer, cx + 1, cy + R * 0.22 + 1);
+  ctx.fillStyle = rgba(style.labelRGBA);
+  ctx.fillText(timer, cx, cy + R * 0.22);
+}
+
+// Format seconds as a short Hebrew-friendly clock for ETA display.
+export function formatClock(sec) {
+  sec = Math.max(0, Math.round(sec));
+  if (sec < 60) return `${sec} שנ׳`;
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')} דק׳`;
 }
 
 // Rounded rect path from (x0,y0)-(x1,y1). radii: number or [tl,tr,br,bl].

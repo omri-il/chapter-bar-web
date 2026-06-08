@@ -14,9 +14,16 @@ starts at** (read straight off their video's playhead — same model as YouTube 
 resolution, and bar style. They see a **live animated preview**, then export one of two ways.
 Chapter end = the next chapter's start; the last chapter ends at the video's end.
 
-**Chapter widths** can be either **proportional to each chapter's duration** or **equal for all
-chapters** (toggle in the form). In equal mode the playhead still tracks real time correctly —
-`visualProgressFromTime()` maps elapsed seconds into each chapter's (equal) slot.
+**Two display styles** (toggle):
+- **Horizontal bar** — the original `render_chapter_bar_flat.py` look across the bottom. Chapter
+  widths either **proportional to duration** or **equal for all** (a second toggle); the playhead
+  stays time-accurate in both via `visualProgressFromTime()`. Configurable playhead marker
+  (bar / line / triangle / circle / none, with width + color).
+- **Circle (Pomodoro)** — a compact ring placed in a corner (or center) showing the **current
+  chapter's name + a live countdown** to its end, with the ring depleting as the chapter runs.
+
+Shared controls: font (system + Google Hebrew fonts), text color, background opacity, FPS,
+resolution. Exports show a live **percentage + ETA** ("מייצר פס ההתקדמות… 27% · נותרו כ-1 שנ׳").
 
 1. **Transparent overlay (`.webm`)** — a transparent clip to drop on top of their own video
    in Premiere / Final Cut / Resolve / OBS. Recorded via `MediaRecorder` (VP9/VP8 alpha) in

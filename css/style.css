@@ -49,6 +49,7 @@ body {
 }
 .card h2 { margin: 0 0 14px; font-size: 1.15rem; }
 .card h3 { margin: 0 0 6px; font-size: 1rem; }
+.card h3.sub { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); }
 
 /* ---- Segmented toggle ---- */
 .seg-toggle { display: flex; gap: 4px; margin-top: 6px; background: var(--card-2); border: 1px solid var(--border); border-radius: 9px; padding: 4px; }

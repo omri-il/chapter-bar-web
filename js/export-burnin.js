@@ -9,7 +9,7 @@
  */
 import MP4Box from 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/+esm';
 import { Muxer, ArrayBufferTarget } from 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs';
-import { computeLayout, renderFrame, visualProgressFromTime, buildChapters } from './bar-engine.js';
+import { computeLayout, renderFrame, visualProgressFromTime, buildChapters, formatClock } from './bar-engine.js';
 
 export function isBurnInSupported() {
   return typeof VideoDecoder !== 'undefined'
@@ -113,12 +113,13 @@ async function transcodeVideo({ video, muxer, state, onProgress }) {
 
   let processed = 0;
   const totalCount = video.chunks.length;
+  const t0 = performance.now();
 
   const decoder = new VideoDecoder({
     output: (frame) => {
       const tSec = frame.timestamp / 1e6;
       const progress = visualProgressFromTime(tSec, chapters);
-      renderFrame(barCtx, { progress, chapters, width, height, layout, style: state.style });
+      renderFrame(barCtx, { progress, elapsedSec: tSec, chapters, width, height, layout, style: state.style });
       outCtx.drawImage(frame, 0, 0, width, height);
       outCtx.drawImage(barCanvas, 0, 0);
       const outFrame = new VideoFrame(outCanvas, { timestamp: frame.timestamp, duration: frame.duration });
@@ -127,7 +128,12 @@ async function transcodeVideo({ video, muxer, state, onProgress }) {
       frame.close();
       processed++;
       if (processed % 5 === 0 || processed === totalCount) {
-        onProgress && onProgress(0.05 + 0.8 * (processed / totalCount), `מעבד פריים ${processed} מתוך ${totalCount}…`);
+        const elapsed = (performance.now() - t0) / 1000;
+        const rate = processed / Math.max(0.001, elapsed);          // frames/sec
+        const remaining = (totalCount - processed) / Math.max(0.1, rate);
+        const etaTxt = processed > 3 ? ` · נותרו כ-${formatClock(remaining)}` : '';
+        onProgress && onProgress(0.05 + 0.8 * (processed / totalCount),
+          `מייצר פס ההתקדמות… ${Math.round(100 * processed / totalCount)}%${etaTxt}`);
       }
     },
     error: (e) => { throw e; },
