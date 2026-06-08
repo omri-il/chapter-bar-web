@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=14';
-import { exportOverlay } from './export-overlay.js?v=14';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=14';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=15';
+import { exportOverlay } from './export-overlay.js?v=15';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=15';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -109,6 +109,8 @@ function readStyle() {
     barHFrac: parseFloat($('barHFrac').value),
     barYCenterFrac: parseFloat($('barYCenterFrac').value),
     cornerRadiusFrac: parseFloat($('cornerRadiusFrac').value),
+    cropTopFrac: parseFloat($('cropTopFrac').value),
+    cropBottomFrac: parseFloat($('cropBottomFrac').value),
     labelSizeFrac: parseFloat($('labelSizeFrac').value),
     fontFamily: $('fontFamily').value,
     layout: layoutMode,
@@ -407,7 +409,7 @@ $('scrub').addEventListener('input', (e) => {
 });
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
+['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
   .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
 
 // "new chapter from current position" capture button (under the scrubber)

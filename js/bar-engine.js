@@ -21,6 +21,8 @@ export const DEFAULT_STYLE = {
   barLeftFrac: 0.0,
   barWFrac: 1.0,
   cornerRadiusFrac: 0.0,  // outer corner radius (fraction of bar height); 0 = straight
+  cropTopFrac: 0.0,       // clip this fraction of the bar height off the TOP
+  cropBottomFrac: 0.0,    // clip this fraction of the bar height off the BOTTOM
   labelSizeFrac: 0.42,    // label font size as fraction of bar height
   fontFamily: 'Arial',    // label font family (primary name; sans-serif appended as fallback)
   playheadStyle: 'bar',   // 'bar' | 'line' | 'triangle' | 'circle' | 'none'
@@ -217,6 +219,17 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
   const barW = br - bl;
   progress = Math.max(0, Math.min(1, progress));
 
+  // Optional crop: clip the bar's vertical extent (top/bottom) when requested.
+  const cropT = (style.cropTopFrac || 0) * layout.barH;
+  const cropB = (style.cropBottomFrac || 0) * layout.barH;
+  const cropped = cropT > 0 || cropB > 0;
+  if (cropped) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, bt + cropT, width, Math.max(0, (bb - cropB) - (bt + cropT)));
+    ctx.clip();
+  }
+
   // RTL: draw all GEOMETRY mirrored horizontally (first chapter on the right, playhead
   // moves right→left). Labels are drawn afterwards un-mirrored so the text isn't reversed.
   const rtl = style.direction === 'rtl';
@@ -337,6 +350,8 @@ function renderBar(ctx, { progress, chapters, width, height, layout, style = DEF
     ctx.fillStyle = rgba(style.labelRGBA);
     ctx.fillText(text, cx, cy);
   }
+
+  if (cropped) ctx.restore(); // end crop clip
 }
 
 // Circle / Pomodoro-style indicator: shows the CURRENT chapter's name + a countdown,
