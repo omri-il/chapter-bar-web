@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=15';
-import { exportOverlay } from './export-overlay.js?v=15';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=15';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=16';
+import { exportOverlay } from './export-overlay.js?v=16';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=16';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -411,6 +411,32 @@ $('scrub').addEventListener('input', (e) => {
 // ---------- bind global controls ----------
 ['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
   .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
+
+// ---------- reset buttons ----------
+const DESIGN_DEFAULTS = {
+  bgOpacity: '190', fontFamily: 'Arial', textColor: '#ffffff',
+  barHFrac: '0.09', barYCenterFrac: '0.08', cropTopFrac: '0', cropBottomFrac: '0',
+  labelSizeFrac: '0.42', cornerRadiusFrac: '0',
+  playheadStyle: 'bar', playheadColor: '#ffffff', playheadWidthFrac: '0.08',
+  circleSizeFrac: '0.22', circlePos: 'br', circleThicknessFrac: '0.16',
+  subSizeFrac: '0.045', subColor: '#ffffff', subPosFrac: '0.18', subBgOpacity: '140',
+};
+$('resetDesign').addEventListener('click', () => {
+  if (!confirm('לאפס את כל הגדרות העיצוב לברירת המחדל?')) return;
+  for (const [id, v] of Object.entries(DESIGN_DEFAULTS)) { const el = $(id); if (el) el.value = v; }
+  barDirection = 'ltr';
+  $('barDirection').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.dir === 'ltr'));
+  $('scrub').dir = 'ltr';
+  drawPreview();
+});
+$('resetChapters').addEventListener('click', () => {
+  if (!confirm('לאפס את הפרקים לברירת המחדל? הפרקים הנוכחיים יימחקו.')) return;
+  chaptersEl.innerHTML = '';
+  defaultRows().forEach(addChapterRow);
+  widthMode = 'equal';
+  $('widthMode').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.mode === 'equal'));
+  onFormChange();
+});
 
 // "new chapter from current position" capture button (under the scrubber)
 $('captureChapter').addEventListener('click', () => {
