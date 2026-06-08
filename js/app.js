@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js';
-import { exportOverlay } from './export-overlay.js';
-import { burnIn, isBurnInSupported } from './export-burnin.js';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=4';
+import { exportOverlay } from './export-overlay.js?v=4';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=4';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -146,6 +146,7 @@ function drawPreview() {
   const visual = visualProgressFromTime(elapsedSec, chapters);
   renderFrame(ctx, { progress: visual, elapsedSec, chapters, width, height, layout, style });
   updateTimeLabel();
+  validateLengths();
 }
 
 function updateTimeLabel() {
@@ -203,9 +204,12 @@ $('exportOverlay').addEventListener('click', async () => {
 });
 
 let pickedFile = null;
+let exporting = false;
+let formValid = true;
+
 $('videoFile').addEventListener('change', (e) => {
   pickedFile = e.target.files[0] || null;
-  $('exportBurnin').disabled = !(pickedFile && isBurnInSupported());
+  updateExportButtons();
 });
 
 $('exportBurnin').addEventListener('click', async () => {
@@ -220,10 +224,32 @@ $('exportBurnin').addEventListener('click', async () => {
   finally { setExporting(false); }
 });
 
+function updateExportButtons() {
+  $('exportOverlay').disabled = exporting || !formValid;
+  $('exportBurnin').disabled = exporting || !formValid || !(pickedFile && isBurnInSupported());
+}
+
 function setExporting(on) {
-  $('exportOverlay').disabled = on;
-  $('exportBurnin').disabled = on || !(pickedFile && isBurnInSupported());
+  exporting = on;
+  updateExportButtons();
   if (on) { statusBox.hidden = false; progressFill.style.width = '0%'; }
+}
+
+// The video length must be longer than the last chapter's start time, otherwise
+// the final chapter(s) would have zero/negative length. Warn + block export.
+function validateLengths() {
+  const rows = readRows();
+  const maxStart = rows.length ? Math.max(...rows.map(r => r.startSec || 0)) : 0;
+  const vlen = parseDuration($('videoLength').value);
+  formValid = vlen > maxStart + 0.001;
+  const warn = $('lengthWarn');
+  if (formValid) {
+    warn.hidden = true;
+  } else {
+    warn.hidden = false;
+    warn.textContent = `⚠ אורך הסרטון חייב להיות גדול מזמן ההתחלה של הפרק האחרון (${formatDuration(maxStart)}).`;
+  }
+  updateExportButtons();
 }
 
 // ---------- play controls ----------
@@ -241,7 +267,7 @@ $('scrub').addEventListener('input', (e) => {
 
 // ---------- bind global controls ----------
 ['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac']
-  .forEach(id => $(id).addEventListener('input', drawPreview));
+  .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
 
 // layout (bar vs circle) segmented toggle
 $('layout').querySelectorAll('.seg').forEach(btn => {
