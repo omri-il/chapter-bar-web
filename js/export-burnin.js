@@ -9,7 +9,7 @@
  */
 import MP4Box from 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/+esm';
 import { Muxer, ArrayBufferTarget } from 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs';
-import { computeLayout, renderFrame, visualProgressFromTime, buildChapters, formatClock } from './bar-engine.js?v=12';
+import { computeLayout, renderFrame, visualProgressFromTime, buildChapters, formatClock } from './bar-engine.js?v=13';
 
 export function isBurnInSupported() {
   return typeof VideoDecoder !== 'undefined'

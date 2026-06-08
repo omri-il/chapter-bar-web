@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=12';
-import { exportOverlay } from './export-overlay.js?v=12';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=12';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=13';
+import { exportOverlay } from './export-overlay.js?v=13';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=13';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -43,7 +43,7 @@ const chaptersEl = $('chapters');
 const canvas = $('preview');
 const ctx = canvas.getContext('2d');
 
-let widthMode = 'length'; // 'length' | 'equal'
+let widthMode = 'equal'; // 'length' | 'equal' (equal default)
 let layoutMode = 'bar';   // 'bar' | 'circle'
 let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead direction
 
