@@ -9,7 +9,7 @@
  */
 import MP4Box from 'https://cdn.jsdelivr.net/npm/mp4box@0.5.2/+esm';
 import { Muxer, ArrayBufferTarget } from 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs';
-import { computeLayout, renderFrame } from './bar-engine.js';
+import { computeLayout, renderFrame, visualProgressFromTime } from './bar-engine.js';
 
 export function isBurnInSupported() {
   return typeof VideoDecoder !== 'undefined'
@@ -114,7 +114,7 @@ async function transcodeVideo({ video, muxer, state, onProgress }) {
   const decoder = new VideoDecoder({
     output: (frame) => {
       const tSec = frame.timestamp / 1e6;
-      const progress = durationSec > 0 ? Math.max(0, Math.min(1, tSec / durationSec)) : 0;
+      const progress = visualProgressFromTime(tSec, state.chapters);
       renderFrame(barCtx, { progress, chapters: state.chapters, width, height, layout, style: state.style });
       outCtx.drawImage(frame, 0, 0, width, height);
       outCtx.drawImage(barCanvas, 0, 0);

@@ -1,5 +1,5 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame } from './bar-engine.js';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js';
 import { exportOverlay } from './export-overlay.js';
 import { burnIn, isBurnInSupported } from './export-burnin.js';
 
@@ -37,6 +37,7 @@ const canvas = $('preview');
 const ctx = canvas.getContext('2d');
 
 let userEditedTotal = false;
+let widthMode = 'length'; // 'length' | 'equal'
 
 // ---------- chapter rows ----------
 function defaultRows() {
@@ -102,8 +103,8 @@ function getState() {
   const { width, height } = readResolution();
   const fps = parseInt($('fps').value, 10);
   const totalSeconds = Math.max(0.1, parseFloat($('totalSeconds').value) || 0);
-  const chapters = buildChapters(rows, totalSeconds, style);
-  return { rows, style, width, height, fps, totalSeconds, chapters };
+  const chapters = buildChapters(rows, widthMode, style);
+  return { rows, style, width, height, fps, totalSeconds, widthMode, chapters };
 }
 
 // ---------- preview ----------
@@ -118,7 +119,9 @@ function drawPreview() {
     canvas.height = height;
   }
   const layout = computeLayout(width, height, style);
-  renderFrame(ctx, { progress, chapters, width, height, layout, style });
+  const { totalSeconds } = getState();
+  const visual = visualProgressFromTime(progress * totalSeconds, chapters);
+  renderFrame(ctx, { progress: visual, chapters, width, height, layout, style });
   updateTimeLabel();
 }
 
@@ -221,6 +224,15 @@ $('scrub').addEventListener('input', (e) => {
   .forEach(id => $(id).addEventListener('input', drawPreview));
 $('totalSeconds').addEventListener('input', () => { userEditedTotal = true; drawPreview(); });
 $('addChapter').addEventListener('click', () => { addChapterRow(); onFormChange(); });
+
+// width-mode segmented toggle
+$('widthMode').querySelectorAll('.seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    widthMode = btn.dataset.mode;
+    $('widthMode').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b === btn));
+    drawPreview();
+  });
+});
 
 // ---------- burn-in support note ----------
 (function () {

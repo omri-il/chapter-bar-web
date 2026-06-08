@@ -50,6 +50,11 @@ body {
 .card h2 { margin: 0 0 14px; font-size: 1.15rem; }
 .card h3 { margin: 0 0 6px; font-size: 1rem; }
 
+/* ---- Segmented toggle ---- */
+.seg-toggle { display: flex; gap: 4px; margin-top: 6px; background: var(--card-2); border: 1px solid var(--border); border-radius: 9px; padding: 4px; }
+.seg { flex: 1; border: none; background: transparent; color: var(--muted); padding: 8px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+.seg.active { background: var(--accent); color: #fff; font-weight: 600; }
+
 /* ---- Chapters ---- */
 .chapters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .chapter-row {

@@ -10,7 +10,11 @@ It's the shareable, web version of the DaVinci Resolve renderer
 
 ## What it does
 The user enters chapters (name + duration), total length, FPS, resolution, and bar style,
-sees a **live animated preview**, then exports one of two ways:
+sees a **live animated preview**, then exports one of two ways.
+
+**Chapter widths** can be either **proportional to each chapter's duration** or **equal for all
+chapters** (toggle in the form). In equal mode the playhead still tracks real time correctly —
+`visualProgressFromTime()` maps elapsed seconds into each chapter's (equal) slot.
 
 1. **Transparent overlay (`.webm`)** — a transparent clip to drop on top of their own video
    in Premiere / Final Cut / Resolve / OBS. Recorded via `MediaRecorder` (VP9/VP8 alpha) in

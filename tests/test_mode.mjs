@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
+page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
+await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
+await page.waitForTimeout(800);
+await page.locator('#scrub').evaluate(el => { el.value=400; el.dispatchEvent(new Event('input',{bubbles:true})); });
+await page.waitForTimeout(200);
+await page.locator('.preview-card').screenshot({ path: 'C:/tmp/mode_length.png' });
+await page.locator('.seg[data-mode="equal"]').click();
+await page.waitForTimeout(200);
+await page.locator('.preview-card').screenshot({ path: 'C:/tmp/mode_equal.png' });
+console.log('active mode btn:', (await page.locator('.seg.active').textContent()).trim());
+console.log(errors.length ? 'ERRORS:\n'+errors.join('\n') : 'NO ERRORS');
+await browser.close();

@@ -5,7 +5,7 @@
  * transparent canvas in real time and record it. Output is a transparent .webm to
  * drop on V2 in Premiere / Final Cut / Resolve / OBS.
  */
-import { computeLayout, renderFrame } from './bar-engine.js';
+import { computeLayout, renderFrame, visualProgressFromTime } from './bar-engine.js';
 
 export function isOverlaySupported() {
   return typeof MediaRecorder !== 'undefined'
@@ -52,9 +52,10 @@ export async function exportOverlay(state, { onProgress, onDone, onError } = {})
   await new Promise((resolve) => {
     function frame() {
       const elapsed = (performance.now() - startT) / 1000;
-      const progress = Math.min(1, elapsed / totalSeconds);
+      const timeFrac = Math.min(1, elapsed / totalSeconds);
+      const progress = visualProgressFromTime(elapsed, chapters);
       renderFrame(ctx, { progress, chapters, width, height, layout, style });
-      onProgress && onProgress(progress, `מקליט שכבה שקופה… ${Math.round(progress * 100)}%`);
+      onProgress && onProgress(timeFrac, `מקליט שכבה שקופה… ${Math.round(timeFrac * 100)}%`);
       if (elapsed >= totalSeconds) { resolve(); return; }
       requestAnimationFrame(frame);
     }

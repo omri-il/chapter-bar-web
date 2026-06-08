@@ -63,23 +63,53 @@ export function computeLayout(width, height, style = DEFAULT_STYLE) {
   };
 }
 
-// Build chapters [{name, sp, ep, rgb}] from form rows [{name, seconds}] + total seconds.
-// sp/ep are normalized [0..1] over the bar span. Matches the Resolve convention:
-// the bar spans 0 -> end of the last chapter; any trailing time (outro) has no segment.
-export function buildChapters(rows, totalSeconds, style = DEFAULT_STYLE) {
+// Build chapters [{name, sp, ep, durSec, rgb}] from form rows [{name, seconds}].
+// `mode` controls segment WIDTHS on the bar:
+//   'length' — each segment's width is proportional to its duration (default)
+//   'equal'  — every segment gets the same width (1/N), regardless of duration
+// durSec keeps the real duration so the playhead can still track real time in both modes.
+export function buildChapters(rows, mode = 'length', style = DEFAULT_STYLE) {
+  const n = Math.max(1, rows.length);
   const sumChapters = rows.reduce((s, r) => s + Math.max(0, r.seconds), 0);
   const span = Math.max(sumChapters, 0.0001);
   let cursor = 0;
   return rows.map((row, i) => {
-    const sp = cursor / span;
-    cursor += Math.max(0, row.seconds);
-    const ep = cursor / span;
+    const durSec = Math.max(0, row.seconds);
+    let sp, ep;
+    if (mode === 'equal') {
+      sp = i / n;
+      ep = (i + 1) / n;
+    } else {
+      sp = cursor / span;
+      cursor += durSec;
+      ep = cursor / span;
+    }
     return {
       name: row.name || `פרק ${i + 1}`,
-      sp, ep,
+      sp, ep, durSec,
       rgb: row.rgb || style.palette[i % style.palette.length],
     };
   });
+}
+
+// Map real elapsed seconds to a visual progress [0..1] along the bar.
+// Uses each chapter's real duration to find the playhead's chapter, then places it
+// inside that chapter's (mode-dependent) sp..ep slot. So time stays accurate while
+// widths follow the chosen mode. Trailing time past the last chapter -> 1 (bar full).
+export function visualProgressFromTime(elapsedSec, chapters) {
+  if (!chapters.length) return 0;
+  const span = chapters.reduce((s, c) => s + c.durSec, 0);
+  if (elapsedSec <= 0) return 0;
+  if (elapsedSec >= span) return 1;
+  let acc = 0;
+  for (const ch of chapters) {
+    if (elapsedSec < acc + ch.durSec && ch.durSec > 0) {
+      const fracIn = (elapsedSec - acc) / ch.durSec;
+      return ch.sp + fracIn * (ch.ep - ch.sp);
+    }
+    acc += ch.durSec;
+  }
+  return 1;
 }
 
 // Port of render_frame() — draws one frame onto a 2D context.
