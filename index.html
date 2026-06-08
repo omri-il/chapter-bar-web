@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
 </head>
 <body>
   <header class="site-header">
@@ -20,7 +20,7 @@
     <!-- ============ CONTROLS ============ -->
     <section class="controls" aria-label="הגדרות">
 
-      <div class="card" id="uploadCard">
+      <div class="card" id="uploadCard" data-card="upload">
         <h2>העלאת סרטון (אופציונלי)</h2>
         <p class="hint">העלו את הסרטון כדי למלא אוטומטית אורך, קצב פריימים ורזולוציה — ולראות תצוגה מקדימה על הסרטון האמיתי שלכם.</p>
         <input type="file" id="videoFile" accept="video/mp4,video/*" />
@@ -31,7 +31,7 @@
         <p id="srtMeta" class="support-note ok" hidden></p>
       </div>
 
-      <div class="card">
+      <div class="card" data-card="settings">
         <h2>הגדרות סרטון</h2>
         <div class="field-row">
           <label>אורך הסרטון הכולל
@@ -61,7 +61,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" data-card="chapters">
         <h2>הפרקים</h2>
         <div class="field-row">
           <label>רוחב הפרקים בפס</label>
@@ -78,7 +78,7 @@
         <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
       </div>
 
-      <div class="card">
+      <div class="card" data-card="style">
         <h2>סגנון התצוגה</h2>
         <div class="seg-toggle" id="layout">
           <button type="button" class="seg active" data-layout="bar">פס אופקי</button>
@@ -87,7 +87,7 @@
         <p class="hint" id="layoutHint">פס התקדמות אופקי לרוחב הסרטון.</p>
       </div>
 
-      <div class="card">
+      <div class="card" data-card="design">
         <h2>עיצוב</h2>
 
         <!-- shared controls -->
@@ -200,7 +200,7 @@
         </div>
       </div>
 
-      <div class="card" id="subtitleCard" hidden>
+      <div class="card" id="subtitleCard" data-card="subtitle" hidden>
         <h2>כתוביות</h2>
         <p class="hint">הכתוביות מהקובץ שהעליתם — מוצגות מימין לשמאל ונצרבות בסרטון.</p>
         <div class="field-row two">
@@ -269,6 +269,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>

@@ -52,16 +52,22 @@ body {
 }
 .card h2 { margin: 0 0 14px; font-size: 1.15rem; }
 
-/* ---- Collapsible cards ---- */
+/* ---- Collapsible + draggable cards ---- */
 .card-toggle {
   width: 100%; display: flex; justify-content: space-between; align-items: center;
-  background: none; border: none; color: var(--text); font-family: inherit;
-  font-size: 1.15rem; font-weight: 600; cursor: pointer; padding: 0; margin: 0 0 14px; text-align: right;
+  color: var(--text); font-size: 1.15rem; font-weight: 600; margin: 0 0 14px;
 }
+.card-toggle .th-left { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; }
+.card-toggle .grip { cursor: grab; color: var(--muted); font-size: 1.05rem; line-height: 1; user-select: none; }
+.card-toggle .grip:active { cursor: grabbing; }
 .card.collapsed .card-toggle { margin-bottom: 0; }
-.card-toggle .chev { color: var(--muted); transition: transform 0.15s; font-size: 0.85rem; }
+.card-toggle .chev { color: var(--muted); transition: transform 0.15s; font-size: 0.85rem; cursor: pointer; }
 .card.collapsed .card-toggle .chev { transform: rotate(-90deg); }
 .card.collapsed .card-body { display: none; }
+.card.dragging { opacity: 0.5; outline: 2px dashed var(--accent); }
+/* Export lives in the preview pane and isn't part of the reorderable list */
+.preview-pane .grip { display: none; }
+.preview-pane .th-left { cursor: default; }
 .card h3 { margin: 0 0 6px; font-size: 1rem; }
 .card h3.sub { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); }
 

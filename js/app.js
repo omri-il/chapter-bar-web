@@ -479,17 +479,81 @@ function makeCollapsible(card, open) {
   if (!card) return;
   const h2 = card.querySelector(':scope > h2');
   if (!h2) return;
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'card-toggle';
-  btn.innerHTML = `<span>${h2.textContent}</span><span class="chev">▾</span>`;
+  const header = document.createElement('div');
+  header.className = 'card-toggle';
+  const left = document.createElement('span');
+  left.className = 'th-left';
+  const grip = document.createElement('span');
+  grip.className = 'grip'; grip.title = 'גרור לשינוי סדר'; grip.textContent = '⠿';
+  const title = document.createElement('span');
+  title.className = 'card-title'; title.textContent = h2.textContent;
+  left.append(grip, title);
+  const chev = document.createElement('span');
+  chev.className = 'chev'; chev.textContent = '▾';
+  header.append(left, chev);
+
   const body = document.createElement('div');
   body.className = 'card-body';
   while (h2.nextSibling) body.appendChild(h2.nextSibling);
-  card.replaceChild(btn, h2);
+  card.replaceChild(header, h2);
   card.appendChild(body);
   card.classList.toggle('collapsed', !open);
-  btn.addEventListener('click', () => card.classList.toggle('collapsed'));
+  header.addEventListener('click', (e) => {
+    if (e.target.closest('.grip')) return; // grip is for dragging, not collapsing
+    card.classList.toggle('collapsed');
+  });
+}
+
+// ---------- drag-to-reorder cards (persisted) ----------
+const ORDER_KEY = 'chapterbar.cardOrder.v1';
+function makeSortable(container) {
+  let dragged = null;
+  container.querySelectorAll(':scope > .card').forEach(card => {
+    const grip = card.querySelector('.grip');
+    if (!grip) return;
+    const arm = () => { card.draggable = true; };
+    grip.addEventListener('mousedown', arm);
+    grip.addEventListener('touchstart', arm, { passive: true });
+    card.addEventListener('dragstart', (e) => {
+      dragged = card; card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', card.dataset.card || ''); } catch (_) {}
+    });
+    card.addEventListener('dragend', () => {
+      card.draggable = false; card.classList.remove('dragging'); dragged = null;
+      saveOrder(container);
+    });
+  });
+  container.addEventListener('dragover', (e) => {
+    if (!dragged) return;
+    e.preventDefault();
+    const after = dragAfter(container, e.clientY);
+    if (after == null) container.appendChild(dragged);
+    else container.insertBefore(dragged, after);
+  });
+}
+function dragAfter(container, y) {
+  const els = [...container.querySelectorAll(':scope > .card:not(.dragging)')];
+  let best = { offset: -Infinity, el: null };
+  for (const child of els) {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > best.offset) best = { offset, el: child };
+  }
+  return best.el;
+}
+function saveOrder(container) {
+  const order = [...container.querySelectorAll(':scope > .card')].map(c => c.dataset.card).filter(Boolean);
+  try { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch (_) {}
+}
+function restoreOrder(container) {
+  let order;
+  try { order = JSON.parse(localStorage.getItem(ORDER_KEY) || '[]'); } catch (_) { return; }
+  if (!Array.isArray(order)) return;
+  order.forEach(key => {
+    const c = container.querySelector(`:scope > .card[data-card="${key}"]`);
+    if (c) container.appendChild(c); // re-append in saved order
+  });
 }
 
 // ---------- init ----------
@@ -497,8 +561,11 @@ defaultRows().forEach(addChapterRow);
 onFormChange();
 drawPreview();
 
-// Make the control cards foldable to reduce clutter. Order in DOM:
-// upload, video settings, chapters, display style, design, subtitles.
-const ctrlOpen = [true, true, true, true, false, true];
-[...document.querySelectorAll('.controls > .card')].forEach((c, i) => makeCollapsible(c, ctrlOpen[i] ?? true));
+// Make the control cards foldable to reduce clutter (open state keyed by data-card).
+const openByKey = { upload: true, settings: true, chapters: true, style: true, design: false, subtitle: true };
+const controlsEl = document.querySelector('.controls');
+controlsEl.querySelectorAll(':scope > .card').forEach(c => makeCollapsible(c, openByKey[c.dataset.card] ?? true));
 makeCollapsible(document.querySelector('.export-card'), false);
+// Restore the user's saved card order, then enable drag-to-reorder.
+restoreOrder(controlsEl);
+makeSortable(controlsEl);
