@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=6';
-import { exportOverlay } from './export-overlay.js?v=6';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=6';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=10';
+import { exportOverlay } from './export-overlay.js?v=10';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=10';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -45,7 +45,7 @@ const ctx = canvas.getContext('2d');
 
 let widthMode = 'length'; // 'length' | 'equal'
 let layoutMode = 'bar';   // 'bar' | 'circle'
-let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead direction
+let barDirection = 'rtl'; // 'ltr' | 'rtl' — chapter order + playhead direction (RTL default for Hebrew)
 
 const previewVideo = $('previewVideo');
 let videoReady = false;   // a video is loaded into the preview

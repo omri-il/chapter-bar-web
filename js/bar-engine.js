@@ -10,7 +10,7 @@
 // All "frac" values are fractions of frame height/width, so the bar scales with resolution.
 export const DEFAULT_STYLE = {
   layout: 'bar',          // 'bar' (horizontal) | 'circle' (Pomodoro-style indicator)
-  direction: 'ltr',       // 'ltr' | 'rtl' — bar chapter order + playhead direction
+  direction: 'rtl',       // 'ltr' | 'rtl' — bar chapter order + playhead direction (RTL default)
   // --- circle layout ---
   circleSizeFrac: 0.22,   // diameter as fraction of frame height
   circlePos: 'br',        // 'tl' | 'tr' | 'bl' | 'br' | 'center'
