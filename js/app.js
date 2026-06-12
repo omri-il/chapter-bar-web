@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=18';
-import { exportOverlay } from './export-overlay.js?v=18';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=18';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=19';
+import { exportOverlay } from './export-overlay.js?v=19';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=19';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -44,7 +44,8 @@ const canvas = $('preview');
 const ctx = canvas.getContext('2d');
 
 let widthMode = 'equal'; // 'length' | 'equal' (equal default)
-let layoutMode = 'bar';   // 'bar' | 'circle'
+let showBar = true;       // draw the horizontal bar
+let showCircle = false;   // draw the circle / side-timer
 let barDirection = 'ltr'; // 'ltr' | 'rtl' — chapter order + playhead direction
 
 const previewVideo = $('previewVideo');
@@ -131,7 +132,10 @@ function readStyle() {
     cropBottomFrac: parseFloat($('cropBottomFrac').value),
     labelSizeFrac: parseFloat($('labelSizeFrac').value),
     fontFamily: $('fontFamily').value,
-    layout: layoutMode,
+    layout: showCircle && !showBar ? 'circle' : 'bar', // keep legacy key coherent
+    showBar,
+    showCircle,
+    circleShowName: $('circleShowName').checked,
     direction: barDirection,
     circleSizeFrac: parseFloat($('circleSizeFrac').value),
     circlePos: $('circlePos').value,
@@ -445,6 +449,11 @@ $('resetDesign').addEventListener('click', () => {
   barDirection = 'ltr';
   $('barDirection').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.dir === 'ltr'));
   $('scrub').dir = 'ltr';
+  showBar = true; $('showBar').checked = true;
+  showCircle = false; $('showCircle').checked = false;
+  $('showCircle').dataset.touched = '';   // re-arm side-timer defaults
+  $('circleShowName').checked = true;
+  syncIndicatorControls();
   drawPreview();
 });
 $('resetChapters').addEventListener('click', () => {
@@ -476,19 +485,27 @@ $('barDirection').querySelectorAll('.seg').forEach(btn => {
 });
 $('scrub').dir = barDirection; // initial
 
-// layout (bar vs circle) segmented toggle
-$('layout').querySelectorAll('.seg').forEach(btn => {
-  btn.addEventListener('click', () => {
-    layoutMode = btn.dataset.layout;
-    $('layout').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b === btn));
-    $('barControls').hidden = layoutMode !== 'bar';
-    $('circleControls').hidden = layoutMode !== 'circle';
-    $('layoutHint').textContent = layoutMode === 'circle'
-      ? 'מחוון עגול שמראה את הפרק הנוכחי וספירה לאחור — ממוקם בפינת הסרטון.'
-      : 'פס התקדמות אופקי לרוחב הסרטון.';
-    drawPreview();
-  });
+// indicators (bar + circle/side-timer) — independent toggles, both can be on
+function syncIndicatorControls() {
+  $('barControls').hidden = !showBar;
+  $('circleControls').hidden = !showCircle;
+}
+$('showBar').addEventListener('change', () => {
+  showBar = $('showBar').checked; syncIndicatorControls(); drawPreview();
 });
+$('showCircle').addEventListener('change', () => {
+  showCircle = $('showCircle').checked;
+  // First time the circle is enabled, default it to a small corner "side timer".
+  if (showCircle && !$('showCircle').dataset.touched) {
+    $('showCircle').dataset.touched = '1';
+    $('circleSizeFrac').value = '0.16';
+    $('circlePos').value = 'br';
+    $('circleShowName').checked = false;
+  }
+  syncIndicatorControls(); drawPreview();
+});
+$('circleShowName').addEventListener('change', drawPreview);
+syncIndicatorControls(); // initial
 $('fontFamily').addEventListener('change', async () => {
   await ensureFontLoaded($('fontFamily').value);
   drawPreview();

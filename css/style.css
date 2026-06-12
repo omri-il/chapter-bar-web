@@ -75,6 +75,8 @@ body {
 .seg-toggle { display: flex; gap: 4px; margin-top: 6px; background: var(--card-2); border: 1px solid var(--border); border-radius: 9px; padding: 4px; }
 .seg { flex: 1; border: none; background: transparent; color: var(--muted); padding: 8px 10px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
 .seg.active { background: var(--accent); color: #fff; font-weight: 600; }
+.check-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 0.9rem; color: var(--text); cursor: pointer; }
+.check-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--accent); cursor: pointer; }
 
 /* ---- Chapters ---- */
 .hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }

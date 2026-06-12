@@ -9,7 +9,10 @@
 // === DEFAULT STYLE (mirrors the constants block in render_chapter_bar_flat.py) ===
 // All "frac" values are fractions of frame height/width, so the bar scales with resolution.
 export const DEFAULT_STYLE = {
-  layout: 'bar',          // 'bar' (horizontal) | 'circle' (Pomodoro-style indicator)
+  layout: 'bar',          // legacy exclusive selector (kept for back-compat)
+  showBar: true,          // draw the horizontal bar
+  showCircle: false,      // draw the circle / side-timer
+  circleShowName: true,   // circle: show active chapter name above the countdown
   direction: 'ltr',       // 'ltr' | 'rtl' — bar chapter order + playhead direction
   // --- circle layout ---
   circleSizeFrac: 0.22,   // diameter as fraction of frame height
@@ -138,11 +141,14 @@ export function visualProgressFromTime(elapsedSec, chapters) {
 export function renderFrame(ctx, opts) {
   const style = opts.style || DEFAULT_STYLE;
   ctx.clearRect(0, 0, opts.width, opts.height);
-  if ((style.layout || 'bar') === 'circle') {
-    renderCircle(ctx, opts);
-  } else {
-    renderBar(ctx, opts);
-  }
+
+  const legacyCircle = (style.layout || 'bar') === 'circle';
+  const showBar    = style.showBar    !== undefined ? style.showBar    : !legacyCircle;
+  const showCircle = style.showCircle !== undefined ? style.showCircle : legacyCircle;
+
+  if (showBar)    renderBar(ctx, opts);
+  if (showCircle) renderCircle(ctx, opts);   // drawn after bar => sits on top
+
   renderSubtitles(ctx, {
     elapsedSec: opts.elapsedSec || 0,
     subtitles: opts.subtitles,
@@ -421,7 +427,7 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
     ctx.lineCap = 'butt';
   }
 
-  // 4) Text inside — countdown (big) + chapter name (above)
+  // 4) Text inside — countdown, plus the chapter name above it (unless hidden).
   const inner = (ringR - thickness / 2) * 2; // usable inner width
   const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
   ctx.textAlign = 'center';
@@ -430,28 +436,32 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
   const r = Math.ceil(remaining);
   const timer = `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`;
 
-  // chapter name (auto-shrink to fit inner width)
-  let nameSize = Math.max(10, Math.round(R * 0.26));
-  const nameText = active.name || '';
-  while (nameSize >= 8) {
-    ctx.font = `bold ${nameSize}px ${family}`;
-    if (ctx.measureText(nameText).width <= inner * 0.92) break;
-    nameSize -= 1;
+  const showName = style.circleShowName !== false; // default ON
+  if (showName) {
+    // chapter name (auto-shrink to fit inner width)
+    let nameSize = Math.max(10, Math.round(R * 0.26));
+    const nameText = active.name || '';
+    while (nameSize >= 8) {
+      ctx.font = `bold ${nameSize}px ${family}`;
+      if (ctx.measureText(nameText).width <= inner * 0.92) break;
+      nameSize -= 1;
+    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = rgba(style.labelShadowRGBA);
+    ctx.fillText(nameText, cx + 1, cy - R * 0.12 + 1);
+    ctx.fillStyle = rgba(style.labelRGBA);
+    ctx.fillText(nameText, cx, cy - R * 0.12);
   }
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = rgba(style.labelShadowRGBA);
-  ctx.fillText(nameText, cx + 1, cy - R * 0.12 + 1);
-  ctx.fillStyle = rgba(style.labelRGBA);
-  ctx.fillText(nameText, cx, cy - R * 0.12);
 
-  // countdown timer (big)
+  // countdown timer (big) — centered when there's no name, lower when there is
   const timerSize = Math.max(12, Math.round(R * 0.5));
+  const timerY = showName ? cy + R * 0.22 : cy;
   ctx.font = `bold ${timerSize}px ${family}`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = rgba(style.labelShadowRGBA);
-  ctx.fillText(timer, cx + 1, cy + R * 0.22 + 1);
+  ctx.fillText(timer, cx + 1, timerY + 1);
   ctx.fillStyle = rgba(style.labelRGBA);
-  ctx.fillText(timer, cx, cy + R * 0.22);
+  ctx.fillText(timer, cx, timerY);
 }
 
 // Format seconds as a short Hebrew-friendly clock for ETA display.

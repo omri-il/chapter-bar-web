@@ -42,7 +42,13 @@ tests/                # Playwright scripts (see "Testing")
 - **Inputs:** total video length first; chapters = name + **start timestamp** (ms precision OK);
   width mode **equal (default)** / by-length; FPS; resolution (incl. vertical presets).
 - **Chapters auto-sort** by start time (`sortChapterRows()`); a blank new row stays last until filled.
-- **Two display styles:** horizontal **bar** (default) / **circle (Pomodoro)** countdown.
+- **Two indicator layers, independently toggleable (can show both at once):** horizontal **bar**
+  (`showBar`, default on) + **circle timer** (`showCircle`, default off). `renderFrame` composes them
+  (`if (showBar) renderBar; if (showCircle) renderCircle`). The circle has a **`circleShowName`** flag:
+  on = full Pomodoro (chapter name + countdown); off = a small **side timer** (countdown only, centered
+  in the ring) for the bar+timer combo — names already live in the bottom bar. Enabling the circle the
+  first time auto-defaults it to small/corner/no-name (`circleSizeFrac 0.16`, `circlePos br`). Legacy
+  `style.layout` ('bar'|'circle') is still honored as a fallback when the flags are absent.
 - **Direction:** **LTR (default)** / RTL toggle — flips chapter order + playhead; the scrubber's
   direction follows it.
 - **Bar geometry:** height, vertical position (up to the very top, `barYCenterFrac` max 1.0),
