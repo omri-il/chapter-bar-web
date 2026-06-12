@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=19';
-import { exportOverlay } from './export-overlay.js?v=19';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=19';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=20';
+import { exportOverlay } from './export-overlay.js?v=20';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=20';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];

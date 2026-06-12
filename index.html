@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=19" />
+  <link rel="stylesheet" href="css/style.css?v=20" />
 </head>
 <body>
   <header class="site-header">
@@ -191,11 +191,21 @@
             </label>
             <label>מיקום העיגול
               <select id="circlePos">
-                <option value="br" selected>למטה-ימין</option>
-                <option value="bl">למטה-שמאל</option>
-                <option value="tr">למעלה-ימין</option>
-                <option value="tl">למעלה-שמאל</option>
-                <option value="center">מרכז</option>
+                <optgroup label="למעלה">
+                  <option value="tr">למעלה-ימין</option>
+                  <option value="tc">למעלה-מרכז</option>
+                  <option value="tl">למעלה-שמאל</option>
+                </optgroup>
+                <optgroup label="באמצע (גובה)">
+                  <option value="mr">אמצע-ימין</option>
+                  <option value="mc">מרכז</option>
+                  <option value="ml">אמצע-שמאל</option>
+                </optgroup>
+                <optgroup label="למטה">
+                  <option value="br" selected>למטה-ימין</option>
+                  <option value="bc">למטה-מרכז</option>
+                  <option value="bl">למטה-שמאל</option>
+                </optgroup>
               </select>
             </label>
           </div>
@@ -279,6 +289,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=19"></script>
+  <script type="module" src="js/app.js?v=20"></script>
 </body>
 </html>

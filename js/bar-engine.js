@@ -387,15 +387,12 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
   const R = diameter / 2;
   const thickness = Math.max(3, Math.round(R * style.circleThicknessFrac));
   const margin = Math.round(R * 0.35);
-  let cx, cy;
-  switch (style.circlePos) {
-    case 'tl': cx = margin + R; cy = margin + R; break;
-    case 'tr': cx = width - margin - R; cy = margin + R; break;
-    case 'bl': cx = margin + R; cy = height - margin - R; break;
-    case 'center': cx = width / 2; cy = height / 2; break;
-    case 'br':
-    default: cx = width - margin - R; cy = height - margin - R; break;
-  }
+  // Position is a 3x3 grid code: row (t/m/b) + col (l/c/r), e.g. 'tl','mc','br'.
+  // Back-compat: old corner codes still work; 'center' maps to the middle cell.
+  const pos = style.circlePos === 'center' ? 'mc' : (style.circlePos || 'br');
+  const row = pos[0], col = pos[1];
+  const cx = col === 'l' ? margin + R : col === 'r' ? width - margin - R : width / 2;
+  const cy = row === 't' ? margin + R : row === 'b' ? height - margin - R : height / 2;
 
   const ringR = R - thickness / 2;
   const bright = scaleColor(active.rgb, 1.0);

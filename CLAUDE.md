@@ -47,7 +47,9 @@ tests/                # Playwright scripts (see "Testing")
   (`if (showBar) renderBar; if (showCircle) renderCircle`). The circle has a **`circleShowName`** flag:
   on = full Pomodoro (chapter name + countdown); off = a small **side timer** (countdown only, centered
   in the ring) for the bar+timer combo — names already live in the bottom bar. Enabling the circle the
-  first time auto-defaults it to small/corner/no-name (`circleSizeFrac 0.16`, `circlePos br`). Legacy
+  first time auto-defaults it to small/corner/no-name (`circleSizeFrac 0.16`, `circlePos br`).
+  **`circlePos` is a 3×3 grid** — row (`t`/`m`/`b`) + col (`l`/`c`/`r`), e.g. `tl`,`tc`,`tr`,`ml`,`mc`,
+  `mr`,`bl`,`bc`,`br` (9 positions); old `center` maps to `mc`. Legacy
   `style.layout` ('bar'|'circle') is still honored as a fallback when the flags are absent.
 - **Direction:** **LTR (default)** / RTL toggle — flips chapter order + playhead; the scrubber's
   direction follows it.
