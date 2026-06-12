@@ -33,14 +33,16 @@ tests/                # Playwright scripts (see "Testing")
 - `visualProgressFromTime(elapsedSec, chapters)` — maps real elapsed seconds to a 0..1 position on
   the bar, so the playhead stays time-accurate even in `equal` mode.
 - `renderFrame(ctx, {progress, elapsedSec, chapters, width, height, layout, style, subtitles})` —
-  clears, then `renderBar` (horizontal) or `renderCircle` (Pomodoro ring with current chapter name +
-  countdown), then `renderSubtitles`. **RTL bar** mirrors geometry via a canvas transform; labels are
-  drawn un-mirrored so text isn't reversed.
+  clears, then **composes** the enabled layers (`if (style.showBar) renderBar`; `if (style.showCircle)
+  renderCircle` — both can draw at once), then `renderSubtitles`. `renderBar` = horizontal bar;
+  `renderCircle` = ring with countdown (+ chapter name unless `circleShowName` is off). **RTL bar**
+  mirrors geometry via a canvas transform; labels are drawn un-mirrored so text isn't reversed.
 - `formatClock(sec)` — short Hebrew ETA string.
 
 ## Features (current)
 - **Inputs:** total video length first; chapters = name + **start timestamp** (ms precision OK);
-  width mode **equal (default)** / by-length; FPS; resolution (incl. vertical presets).
+  resolution (incl. vertical presets). Width mode **equal (default)** / by-length and FPS live under
+  "advanced" (see Progressive disclosure).
 - **Chapters auto-sort** by start time (`sortChapterRows()`); a blank new row stays last until filled.
 - **Import markers** (`#importToggle` panel in the Chapters card): paste a list (name + timecode per
   line) or upload a **DaVinci EDL** (Timeline → Export → Timeline Markers to EDL). `parseMarkers`
@@ -86,8 +88,6 @@ tests/                # Playwright scripts (see "Testing")
   chapters+import, bar/timer toggles, font + text color, bar height + position, timer size + position
   + show-name. Advanced = FPS, **width-mode** (moved out of the Chapters card), direction, crop, label
   size, corner radius, bar bg opacity, playhead, and all timer color/thickness/text-size/font controls.
-  **Tests must open these** (`document.querySelectorAll('details').forEach(d=>d.open=true)`) the same
-  way they expand `.card.collapsed`, since controls inside a closed `<details>` aren't clickable.
 - **Validation:** video length must exceed the last chapter's start; otherwise a warning shows and
   both export buttons are disabled.
 - **Reset buttons:** "↺ איפוס העיצוב" restores all design controls to defaults; "↺ איפוס הפרקים"
@@ -122,10 +122,14 @@ node tests/test_preview.mjs      # loads page, preview renders, no JS errors
 node tests/test_overlay.mjs      # transparent WebM export
 node tests/test_burnin.mjs       # MP4 burn-in (generate C:/tmp/sample.mp4 first)
 ```
-Notes: tests that click export buttons first expand collapsed cards
-(`document.querySelectorAll('.card.collapsed').forEach(c=>c.classList.remove('collapsed'))`).
-Native HTML5 drag-and-drop can't be triggered by Playwright's synthetic mouse — verify reorder by
-dispatching `DragEvent`s (see `tests/test_dnd_events.mjs`).
+Notes: tests that interact with controls first **reveal** them — expand collapsed cards AND open the
+advanced `<details>`:
+`document.querySelectorAll('.card.collapsed').forEach(c=>c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d=>d.open=true);`
+(controls inside a closed `<details>` aren't clickable). The bar/timer are toggled via the
+`#showBar`/`#showCircle` checkboxes (not a `data-layout` toggle), and `<h2>` headings are replaced by
+`.card-title` after the collapsible transform — select that, not `h2`. Native HTML5 drag-and-drop
+can't be triggered by Playwright's synthetic mouse — verify reorder by dispatching `DragEvent`s
+(see `tests/test_dnd_events.mjs`).
 
 ## Known limitations / deferred
 - **Google Drive links not supported** (CORS blocks cross-origin fetch; the URL-load field was
