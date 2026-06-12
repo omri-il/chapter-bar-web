@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=21';
-import { exportOverlay } from './export-overlay.js?v=21';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=21';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=22';
+import { exportOverlay } from './export-overlay.js?v=22';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=22';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -35,6 +35,71 @@ function formatDurationPrecise(sec) {
   const m = Math.floor(sec / 60);
   const s = sec - m * 60;
   return `${m}:${s.toFixed(3).padStart(6, '0')}`;
+}
+
+// ---------- marker import (DaVinci timecodes / pasted lists / EDL) ----------
+// Timecode → seconds. Handles HH:MM:SS:FF frames (needs fps), HH:MM:SS(.mmm), MM:SS(.mmm).
+function tcToSec(tc, fps = 30) {
+  tc = String(tc).trim();
+  let m;
+  if ((m = tc.match(/^(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})$/)))   // HH:MM:SS.mmm
+    return +m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4].padEnd(3, '0') / 1000;
+  if ((m = tc.match(/^(\d{1,2}):(\d{2}):(\d{2})[:;](\d{1,3})$/)))   // HH:MM:SS:FF (frames)
+    return +m[1] * 3600 + +m[2] * 60 + +m[3] + (+m[4]) / (fps || 30);
+  if ((m = tc.match(/^(\d{1,2}):(\d{2}):(\d{2})$/)))               // HH:MM:SS
+    return +m[1] * 3600 + +m[2] * 60 + +m[3];
+  if ((m = tc.match(/^(\d{1,2}):(\d{2})[.,](\d{1,3})$/)))          // MM:SS.mmm
+    return +m[1] * 60 + +m[2] + +m[3].padEnd(3, '0') / 1000;
+  if ((m = tc.match(/^(\d{1,2}):(\d{2})$/)))                       // MM:SS
+    return +m[1] * 60 + +m[2];
+  return null;
+}
+const TC_RE = /\d{1,2}:\d{2}:\d{2}(?:[.,:;]\d{1,3})?|\d{1,2}:\d{2}(?:[.,]\d{1,3})?/;
+
+// Display a start time: drop sub-second (frames irrelevant for a chapter bar); H:MM:SS if >= 1h.
+function formatStart(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+           : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// DaVinci "Timeline Markers to EDL": pair each |M:name with the prior event's record-in timecode.
+function parseEDL(text, fps) {
+  const out = []; let lastTC = null;
+  for (const line of text.replace(/\r/g, '').split('\n')) {
+    const ev = line.match(/^\s*\d+\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
+    if (ev && tcToSec(ev[3], fps) != null) { lastTC = ev[3]; continue; }
+    const mk = line.match(/\|M:([^|]*)/);
+    if (mk && lastTC != null) {
+      out.push({ name: mk[1].trim(), sec: tcToSec(lastTC, fps) });
+      lastTC = null;
+    }
+  }
+  return out;
+}
+
+// One marker per line: find the timecode token, the rest (minus a leading index) is the name.
+function parseLineList(text, fps) {
+  const out = [];
+  for (const raw of text.replace(/\r/g, '').split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const tcm = line.match(TC_RE);
+    if (!tcm) continue;                       // skip headers (TITLE:, FCM:, etc.)
+    const sec = tcToSec(tcm[0], fps);
+    if (sec == null) continue;
+    const name = (line.slice(0, tcm.index) + ' ' + line.slice(tcm.index + tcm[0].length))
+      .replace(/^[\s\-–•]*\d+[.)\]]?\s*/, '')   // leading index like "1." / "01)"
+      .replace(/[|,\t"']/g, ' ').trim();
+    out.push({ name: name || `פרק ${out.length + 1}`, sec });
+  }
+  return out;
+}
+
+function parseMarkers(text, fps) {
+  const isEDL = /\|M:/.test(text) || /^\s*(TITLE|FCM):/im.test(text);
+  return isEDL ? parseEDL(text, fps) : parseLineList(text, fps);
 }
 
 // ---------- DOM ----------
@@ -479,6 +544,38 @@ $('resetChapters').addEventListener('click', () => {
   widthMode = 'equal';
   $('widthMode').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.mode === 'equal'));
   onFormChange();
+});
+
+// ---------- import markers (paste a list / DaVinci EDL) ----------
+function applyImport(text) {
+  const fps = parseInt($('fps').value, 10) || 30;
+  let markers = parseMarkers(text, fps).filter(m => m.sec != null);
+  if (!markers.length) { $('importMeta').textContent = 'לא נמצאו מרקרים בטקסט.'; return; }
+  markers.sort((a, b) => a.sec - b.sec);
+  if ($('importOffset').checked) {
+    const base = markers[0].sec;
+    markers = markers.map(m => ({ ...m, sec: Math.max(0, m.sec - base) }));
+  }
+  if (chaptersEl.children.length && !confirm('לייבא ולהחליף את הפרקים הקיימים?')) return;
+  chaptersEl.innerHTML = '';
+  markers.forEach((m, i) => addChapterRow({
+    name: m.name, start: formatStart(m.sec), hex: PALETTE_HEX[i % PALETTE_HEX.length],
+  }));
+  sortChapterRows();
+  onFormChange();
+  const last = markers[markers.length - 1].sec;
+  const vl = parseDuration($('videoLength').value);
+  $('importMeta').textContent = `נטענו ${markers.length} פרקים.` +
+    (last >= vl ? ` ⚠️ עדכנו את "אורך הסרטון הכולל" (הפרק האחרון ב-${formatStart(last)}).` : '');
+}
+$('importToggle').addEventListener('click', () => { $('importPanel').hidden = !$('importPanel').hidden; });
+$('importRun').addEventListener('click', () => applyImport($('importText').value));
+$('importFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const text = await f.text();
+  $('importText').value = text;   // show what was loaded
+  applyImport(text);
+  e.target.value = '';            // allow re-selecting the same file
 });
 
 // "new chapter from current position" capture button (under the scrubber)

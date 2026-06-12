@@ -77,6 +77,9 @@ body {
 .seg.active { background: var(--accent); color: #fff; font-weight: 600; }
 .check-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 0.9rem; color: var(--text); cursor: pointer; }
 .check-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.import-panel { margin: 8px 0; padding: 10px; background: var(--card-2); border: 1px solid var(--border); border-radius: 9px; }
+.import-panel textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: inherit; font-size: 0.9rem; direction: rtl; margin-bottom: 6px; }
+.import-panel code { background: var(--card); padding: 1px 5px; border-radius: 4px; }
 
 /* ---- Chapters ---- */
 .hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }

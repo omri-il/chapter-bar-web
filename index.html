@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=21" />
+  <link rel="stylesheet" href="css/style.css?v=22" />
 </head>
 <body>
   <header class="site-header">
@@ -76,6 +76,19 @@
         </div>
         <div id="chapters" class="chapters"></div>
         <button type="button" id="addChapter" class="btn btn-ghost">+ הוספת פרק</button>
+        <button type="button" id="importToggle" class="btn btn-ghost" style="margin-top:8px;">⤓ ייבוא מרקרים (DaVinci / רשימה)</button>
+        <div id="importPanel" class="import-panel" hidden>
+          <p class="hint">הדביקו רשימה (שם + טיים-קוד בכל שורה) או העלו קובץ EDL מ-DaVinci. דוגמה: <code>פתיחה 01:00:00:00</code></p>
+          <textarea id="importText" rows="6" placeholder="פתיחה 01:00:00:00&#10;Flash 3.5 01:08:59:08&#10;עיצוב חדש 01:19:04:08"></textarea>
+          <label class="check-row"><input type="checkbox" id="importOffset" checked /> הפוך את המרקר הראשון ל-0:00</label>
+          <div class="field-row two">
+            <label>קובץ EDL / טקסט
+              <input type="file" id="importFile" accept=".edl,.txt,.csv" />
+            </label>
+            <button type="button" id="importRun" class="btn">ייבוא</button>
+          </div>
+          <p id="importMeta" class="hint"></p>
+        </div>
         <button type="button" id="resetChapters" class="btn btn-ghost" style="margin-top:8px;">↺ איפוס הפרקים</button>
       </div>
 
@@ -338,6 +351,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=21"></script>
+  <script type="module" src="js/app.js?v=22"></script>
 </body>
 </html>

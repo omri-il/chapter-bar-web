@@ -42,6 +42,13 @@ tests/                # Playwright scripts (see "Testing")
 - **Inputs:** total video length first; chapters = name + **start timestamp** (ms precision OK);
   width mode **equal (default)** / by-length; FPS; resolution (incl. vertical presets).
 - **Chapters auto-sort** by start time (`sortChapterRows()`); a blank new row stays last until filled.
+- **Import markers** (`#importToggle` panel in the Chapters card): paste a list (name + timecode per
+  line) or upload a **DaVinci EDL** (Timeline → Export → Timeline Markers to EDL). `parseMarkers`
+  routes to `parseEDL` (pairs `|M:name` with the event's record-in TC) or `parseLineList` (finds the
+  timecode token per line, rest = name). `tcToSec` handles `HH:MM:SS:FF` frames (uses the FPS select),
+  `HH:MM:SS(.mmm)`, `MM:SS`. **`#importOffset`** (default on) subtracts the earliest marker so the
+  first chapter = `0:00` (Resolve timelines start at `01:00:00:00`). `applyImport` replaces the rows
+  (reuses `addChapterRow`/`sortChapterRows`) and warns if the last chapter exceeds the total length.
 - **Two indicator layers, independently toggleable (can show both at once):** horizontal **bar**
   (`showBar`, default on) + **circle timer** (`showCircle`, default off). `renderFrame` composes them
   (`if (showBar) renderBar; if (showCircle) renderCircle`). The circle has a **`circleShowName`** flag:
