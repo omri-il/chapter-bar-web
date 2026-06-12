@@ -18,7 +18,7 @@ await page.locator('#scrub').evaluate(el => { el.value=200; el.dispatchEvent(new
 await page.waitForTimeout(200);
 await page.locator('.canvas-wrap').screenshot({ path: 'C:/tmp/circle_br.png' });
 // move to center + bigger
-await page.locator('#circlePos').selectOption('center');
+await page.locator('#circlePos').selectOption('mc');
 await page.locator('#circleSizeFrac').evaluate(el => { el.value='0.45'; el.dispatchEvent(new Event('input',{bubbles:true})); });
 await page.waitForTimeout(200);
 await page.locator('.canvas-wrap').screenshot({ path: 'C:/tmp/circle_center.png' });

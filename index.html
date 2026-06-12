@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20" />
+  <link rel="stylesheet" href="css/style.css?v=21" />
 </head>
 <body>
   <header class="site-header">
@@ -214,6 +214,55 @@
               <input type="range" id="circleThicknessFrac" min="0.06" max="0.5" step="0.02" value="0.16" />
             </label>
           </div>
+
+          <h3 class="sub">צבעים וטקסט של הטיימר</h3>
+          <label class="check-row"><input type="checkbox" id="circleUseChapterColor" checked /> צבע הטבעת לפי צבע הפרק</label>
+          <div class="field-row two">
+            <label>צבע הטבעת (כשלא לפי הפרק)
+              <input type="color" id="circleRingColor" value="#388add" />
+            </label>
+            <label>צבע הטקסט בטיימר
+              <input type="color" id="circleTextColor" value="#ffffff" />
+            </label>
+          </div>
+          <div class="field-row two">
+            <label>צבע הרקע
+              <input type="color" id="circleBgColor" value="#16161c" />
+            </label>
+            <label>שקיפות הרקע
+              <input type="range" id="circleBgOpacity" min="0" max="255" step="5" value="190" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>גודל הטקסט בטיימר
+              <input type="range" id="circleTextScale" min="0.5" max="1.8" step="0.05" value="1.0" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>גופן הטיימר
+              <select id="circleFontFamily">
+                <option value="" selected>כמו הגופן הראשי</option>
+                <optgroup label="ללא תווית (Sans)">
+                  <option value="Heebo">Heebo</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Noto Sans Hebrew">Noto Sans</option>
+                  <option value="Assistant">Assistant</option>
+                  <option value="Rubik">Rubik</option>
+                  <option value="Alef">Alef</option>
+                  <option value="Miriam Libre">Miriam Libre</option>
+                </optgroup>
+                <optgroup label="עיצוביים / כותרת">
+                  <option value="Secular One">Secular One</option>
+                  <option value="Suez One">Suez One</option>
+                  <option value="Karantina">Karantina</option>
+                  <option value="Bellefair">Bellefair</option>
+                  <option value="Frank Ruhl Libre">Frank Ruhl Libre</option>
+                  <option value="David Libre">David Libre</option>
+                </optgroup>
+                <option value="Arial">Arial</option>
+              </select>
+            </label>
+          </div>
           <label class="check-row"><input type="checkbox" id="circleShowName" checked /> הצגת שם הפרק בתוך הטיימר</label>
         </div>
 
@@ -289,6 +338,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=20"></script>
+  <script type="module" src="js/app.js?v=21"></script>
 </body>
 </html>

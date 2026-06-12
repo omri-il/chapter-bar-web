@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=20';
-import { exportOverlay } from './export-overlay.js?v=20';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=20';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=21';
+import { exportOverlay } from './export-overlay.js?v=21';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=21';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -123,6 +123,8 @@ function readStyle() {
   const tc = hexToRgb01($('textColor').value);
   const pc = hexToRgb01($('playheadColor').value);
   const sc = hexToRgb01($('subColor').value);
+  const ctc = hexToRgb01($('circleTextColor').value);
+  const cbc = hexToRgb01($('circleBgColor').value);
   return {
     ...DEFAULT_STYLE,
     barHFrac: parseFloat($('barHFrac').value),
@@ -140,6 +142,12 @@ function readStyle() {
     circleSizeFrac: parseFloat($('circleSizeFrac').value),
     circlePos: $('circlePos').value,
     circleThicknessFrac: parseFloat($('circleThicknessFrac').value),
+    circleUseChapterColor: $('circleUseChapterColor').checked,
+    circleRingRGB: hexToRgb01($('circleRingColor').value),
+    circleTextScale: parseFloat($('circleTextScale').value),
+    circleFontFamily: $('circleFontFamily').value,
+    circleTextRGBA: [Math.round(ctc[0] * 255), Math.round(ctc[1] * 255), Math.round(ctc[2] * 255), 235],
+    circleBgRGBA: [Math.round(cbc[0] * 255), Math.round(cbc[1] * 255), Math.round(cbc[2] * 255), parseInt($('circleBgOpacity').value, 10)],
     playheadStyle: $('playheadStyle').value,
     playheadWidthFrac: parseFloat($('playheadWidthFrac').value),
     bgRGBA: [DEFAULT_STYLE.bgRGBA[0], DEFAULT_STYLE.bgRGBA[1], DEFAULT_STYLE.bgRGBA[2], parseInt($('bgOpacity').value, 10)],
@@ -431,8 +439,13 @@ $('scrub').addEventListener('input', (e) => {
 });
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
+['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'circleUseChapterColor', 'circleRingColor', 'circleTextColor', 'circleBgColor', 'circleBgOpacity', 'circleTextScale', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
   .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
+// timer font: load the face before rendering with it
+$('circleFontFamily').addEventListener('change', async () => {
+  await ensureFontLoaded($('circleFontFamily').value);
+  drawPreview();
+});
 
 // ---------- reset buttons ----------
 const DESIGN_DEFAULTS = {
@@ -441,6 +454,8 @@ const DESIGN_DEFAULTS = {
   labelSizeFrac: '0.42', cornerRadiusFrac: '0',
   playheadStyle: 'bar', playheadColor: '#ffffff', playheadWidthFrac: '0.08',
   circleSizeFrac: '0.22', circlePos: 'br', circleThicknessFrac: '0.16',
+  circleRingColor: '#388add', circleTextColor: '#ffffff', circleBgColor: '#16161c',
+  circleBgOpacity: '190', circleTextScale: '1.0', circleFontFamily: '',
   subSizeFrac: '0.045', subColor: '#ffffff', subPosFrac: '0.18', subBgOpacity: '140',
 };
 $('resetDesign').addEventListener('click', () => {
@@ -453,6 +468,7 @@ $('resetDesign').addEventListener('click', () => {
   showCircle = false; $('showCircle').checked = false;
   $('showCircle').dataset.touched = '';   // re-arm side-timer defaults
   $('circleShowName').checked = true;
+  $('circleUseChapterColor').checked = true;
   syncIndicatorControls();
   drawPreview();
 });

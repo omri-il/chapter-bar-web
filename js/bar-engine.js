@@ -16,8 +16,14 @@ export const DEFAULT_STYLE = {
   direction: 'ltr',       // 'ltr' | 'rtl' — bar chapter order + playhead direction
   // --- circle layout ---
   circleSizeFrac: 0.22,   // diameter as fraction of frame height
-  circlePos: 'br',        // 'tl' | 'tr' | 'bl' | 'br' | 'center'
+  circlePos: 'br',        // 3x3 grid: row(t/m/b)+col(l/c/r) — 'tl'..'br'; 'center'->'mc'
   circleThicknessFrac: 0.16, // ring thickness as fraction of radius
+  circleUseChapterColor: true, // ring follows the active chapter's color (else circleRingRGB)
+  circleRingRGB: [0.22, 0.54, 0.87], // custom ring color (0..1) when not following chapters
+  circleTextScale: 1.0,   // multiplier on the timer/name text size
+  circleFontFamily: '',   // own font; '' = follow the main fontFamily
+  circleTextRGBA: [255, 255, 255, 235], // timer/name text color
+  circleBgRGBA: [22, 22, 28, 190],      // background disc color + opacity
   // --- bar layout ---
   barYCenterFrac: 0.08,   // distance from BOTTOM to bar center (fraction of height)
   barHFrac: 0.09,         // bar height (fraction of height)
@@ -395,13 +401,14 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
   const cy = row === 't' ? margin + R : row === 'b' ? height - margin - R : height / 2;
 
   const ringR = R - thickness / 2;
-  const bright = scaleColor(active.rgb, 1.0);
-  const dim = scaleColor(active.rgb, style.dim);
+  const ringRGB01 = (style.circleUseChapterColor === false && style.circleRingRGB) ? style.circleRingRGB : active.rgb;
+  const bright = scaleColor(ringRGB01, 1.0);
+  const dim = scaleColor(ringRGB01, style.dim);
 
   // 1) Background disc
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.fillStyle = rgba(style.bgRGBA);
+  ctx.fillStyle = rgba(style.circleBgRGBA || style.bgRGBA);
   ctx.fill();
 
   // 2) Ring track (full, dim)
@@ -426,7 +433,9 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
 
   // 4) Text inside — countdown, plus the chapter name above it (unless hidden).
   const inner = (ringR - thickness / 2) * 2; // usable inner width
-  const family = `"${style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
+  const family = `"${style.circleFontFamily || style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
+  const scale = style.circleTextScale || 1;
+  const textRGBA = style.circleTextRGBA || style.labelRGBA;
   ctx.textAlign = 'center';
   ctx.direction = 'rtl';
 
@@ -436,7 +445,7 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
   const showName = style.circleShowName !== false; // default ON
   if (showName) {
     // chapter name (auto-shrink to fit inner width)
-    let nameSize = Math.max(10, Math.round(R * 0.26));
+    let nameSize = Math.max(10, Math.round(R * 0.26 * scale));
     const nameText = active.name || '';
     while (nameSize >= 8) {
       ctx.font = `bold ${nameSize}px ${family}`;
@@ -446,18 +455,18 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = rgba(style.labelShadowRGBA);
     ctx.fillText(nameText, cx + 1, cy - R * 0.12 + 1);
-    ctx.fillStyle = rgba(style.labelRGBA);
+    ctx.fillStyle = rgba(textRGBA);
     ctx.fillText(nameText, cx, cy - R * 0.12);
   }
 
   // countdown timer (big) — centered when there's no name, lower when there is
-  const timerSize = Math.max(12, Math.round(R * 0.5));
+  const timerSize = Math.max(12, Math.round(R * 0.5 * scale));
   const timerY = showName ? cy + R * 0.22 : cy;
   ctx.font = `bold ${timerSize}px ${family}`;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = rgba(style.labelShadowRGBA);
   ctx.fillText(timer, cx + 1, timerY + 1);
-  ctx.fillStyle = rgba(style.labelRGBA);
+  ctx.fillStyle = rgba(textRGBA);
   ctx.fillText(timer, cx, timerY);
 }
 

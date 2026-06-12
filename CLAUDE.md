@@ -51,6 +51,10 @@ tests/                # Playwright scripts (see "Testing")
   **`circlePos` is a 3×3 grid** — row (`t`/`m`/`b`) + col (`l`/`c`/`r`), e.g. `tl`,`tc`,`tr`,`ml`,`mc`,
   `mr`,`bl`,`bc`,`br` (9 positions); old `center` maps to `mc`. Legacy
   `style.layout` ('bar'|'circle') is still honored as a fallback when the flags are absent.
+- **Timer styling (dedicated circle controls):** ring color (`circleUseChapterColor` on = follow the
+  active chapter; off = custom `circleRingRGB`), ring thickness (`circleThicknessFrac`), text size
+  (`circleTextScale`, multiplier on name+timer), text color (`circleTextRGBA`), background color +
+  opacity (`circleBgRGBA`), and its own font (`circleFontFamily`, `''` = follow the main `fontFamily`).
 - **Direction:** **LTR (default)** / RTL toggle — flips chapter order + playhead; the scrubber's
   direction follows it.
 - **Bar geometry:** height, vertical position (up to the very top, `barYCenterFrac` max 1.0),
