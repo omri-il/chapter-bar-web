@@ -18,9 +18,9 @@ await designToggle.click(); await page.waitForTimeout(150);
 console.log('design collapsed after click:', await designCard.evaluate(el => el.classList.contains('collapsed')));
 
 // layout toggle still works after collapsible transform (display style card is open)
-await page.locator('.seg[data-layout="circle"]').click(); await page.waitForTimeout(150);
+await page.locator('#showCircle').check(); await page.waitForTimeout(150);
 console.log('circleControls visible after toggle:', !(await page.locator('#circleControls').isHidden()));
-await page.locator('.seg[data-layout="bar"]').click();
+await page.locator('#showCircle').uncheck();
 
 // keep playing while scrubbing
 await page.locator('.card-toggle', { hasText: 'העלאת סרטון' }).first().click().catch(()=>{}); // ensure upload open (it's open by default; click would close — so skip)

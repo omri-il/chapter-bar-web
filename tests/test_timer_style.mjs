@@ -6,7 +6,7 @@ page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1000);
-await page.evaluate(() => document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')));
+await page.evaluate(() => { document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d => d.open = true); });
 await page.locator('#showCircle').check();
 await page.locator('#circlePos').selectOption('mc');
 await page.locator('#circleSizeFrac').evaluate(el => { el.value='0.5'; el.dispatchEvent(new Event('input',{bubbles:true})); });

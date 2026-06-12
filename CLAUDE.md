@@ -80,6 +80,14 @@ tests/                # Playwright scripts (see "Testing")
 - **Layout UX:** cards are **collapsible** (Design + Export collapsed by default) and
   **drag-to-reorder** via the ⠿ grip (order persisted in `localStorage` `chapterbar.cardOrder.v1`).
   Preview is **sticky**.
+- **Progressive disclosure (basic vs advanced):** to avoid overwhelming new users, each busy section
+  keeps a few common controls visible and tucks the rest in a native `<details class="adv">`
+  ("הגדרות מתקדמות"), closed by default — pure CSS, no JS. Basic = video length, resolution,
+  chapters+import, bar/timer toggles, font + text color, bar height + position, timer size + position
+  + show-name. Advanced = FPS, **width-mode** (moved out of the Chapters card), direction, crop, label
+  size, corner radius, bar bg opacity, playhead, and all timer color/thickness/text-size/font controls.
+  **Tests must open these** (`document.querySelectorAll('details').forEach(d=>d.open=true)`) the same
+  way they expand `.card.collapsed`, since controls inside a closed `<details>` aren't clickable.
 - **Validation:** video length must exceed the last chapter's start; otherwise a warning shows and
   both export buttons are disabled.
 - **Reset buttons:** "↺ איפוס העיצוב" restores all design controls to defaults; "↺ איפוס הפרקים"

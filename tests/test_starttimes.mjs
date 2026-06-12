@@ -6,6 +6,7 @@ page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(800);
+await page.evaluate(() => { document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d => d.open = true); });
 const rows = await page.locator('.chapter-row').count();
 const vlen = await page.locator('#videoLength').inputValue();
 const starts = await page.$$eval('.ch-start', els => els.map(e=>e.value));

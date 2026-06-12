@@ -6,6 +6,7 @@ page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1500); // let fonts load
+await page.evaluate(() => { document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d => d.open = true); });
 
 // pick font Secular One + red text
 await page.locator('#fontFamily').selectOption('Secular One');

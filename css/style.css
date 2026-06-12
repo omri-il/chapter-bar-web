@@ -81,6 +81,15 @@ body {
 .import-panel textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: inherit; font-size: 0.9rem; direction: rtl; margin-bottom: 6px; }
 .import-panel code { background: var(--card); padding: 1px 5px; border-radius: 4px; }
 
+/* ---- Advanced (progressive disclosure) ---- */
+details.adv { margin: 10px 0 2px; border-top: 1px solid var(--border); padding-top: 10px; }
+details.adv > summary { cursor: pointer; color: var(--muted); font-size: 0.86rem; list-style: none; user-select: none; padding: 4px 0; display: flex; align-items: center; gap: 6px; }
+details.adv > summary::-webkit-details-marker { display: none; }
+details.adv > summary::before { content: '▸'; display: inline-block; transition: transform .15s ease; }
+details.adv[open] > summary::before { transform: rotate(90deg); }
+details.adv > summary:hover { color: var(--text); }
+.adv-body { padding-top: 8px; }
+
 /* ---- Chapters ---- */
 .hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; }
 .chapters-head {

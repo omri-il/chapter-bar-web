@@ -6,8 +6,9 @@ page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1500);
-// first card heading should now be video settings
-const firstH2 = await page.locator('.controls .card h2').first().textContent();
+await page.evaluate(() => { document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d => d.open = true); });
+// first card heading should now be video settings (h2 is replaced by .card-title after collapsible transform)
+const firstH2 = await page.locator('.controls .card .card-title').first().textContent();
 console.log('first card:', firstH2.trim());
 // font options count + a few values
 const opts = await page.$$eval('#fontFamily option', els => els.map(e=>e.value));

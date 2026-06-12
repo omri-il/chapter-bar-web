@@ -8,6 +8,7 @@ await page.waitForTimeout(2000);
 const hasDir = await page.locator('#barDirection').count();
 console.log('direction toggle present on live:', hasDir);
 if (!hasDir) { console.log('LIVE NOT YET UPDATED'); await browser.close(); process.exit(0); }
+await page.evaluate(() => { document.querySelectorAll('.card.collapsed').forEach(c => c.classList.remove('collapsed')); document.querySelectorAll('details').forEach(d => d.open = true); });
 await page.locator('#videoLength').fill('1:40');
 const starts = await page.$$('.ch-start');
 const sv=['0:00','0:25','0:50','1:15'];

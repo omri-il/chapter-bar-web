@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=22" />
+  <link rel="stylesheet" href="css/style.css?v=23" />
 </head>
 <body>
   <header class="site-header">
@@ -40,16 +40,7 @@
           </label>
           <p id="lengthWarn" class="support-note warn" hidden></p>
         </div>
-        <div class="field-row two">
-          <label>קצב פריימים (FPS)
-            <select id="fps">
-              <option value="24">24</option>
-              <option value="25">25</option>
-              <option value="30" selected>30</option>
-              <option value="50">50</option>
-              <option value="60">60</option>
-            </select>
-          </label>
+        <div class="field-row">
           <label>רזולוציה
             <select id="resolution">
               <option value="1920x1080" selected>1920×1080 — אופקי</option>
@@ -59,17 +50,26 @@
             </select>
           </label>
         </div>
+        <details class="adv">
+          <summary>הגדרות מתקדמות</summary>
+          <div class="adv-body">
+            <div class="field-row">
+              <label>קצב פריימים (FPS)
+                <select id="fps">
+                  <option value="24">24</option>
+                  <option value="25">25</option>
+                  <option value="30" selected>30</option>
+                  <option value="50">50</option>
+                  <option value="60">60</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div class="card" data-card="chapters">
         <h2>הפרקים</h2>
-        <div class="field-row">
-          <label>רוחב הפרקים בפס</label>
-          <div class="seg-toggle" id="widthMode">
-            <button type="button" class="seg" data-mode="length">לפי האורך</button>
-            <button type="button" class="seg active" data-mode="equal">שווה לכולם</button>
-          </div>
-        </div>
         <p class="hint">לכל פרק כתבו שם ואת המיקום שלו בסרטון. הפרק הראשון מתחיל ב-0:00.</p>
         <div class="chapters-head">
           <span>שם הפרק</span><span>מתחיל ב-</span><span></span><span></span><span></span>
@@ -102,12 +102,7 @@
       <div class="card" data-card="design">
         <h2>עיצוב</h2>
 
-        <!-- shared controls -->
-        <div class="field-row">
-          <label>שקיפות רקע
-            <input type="range" id="bgOpacity" min="0" max="255" step="5" value="190" />
-          </label>
-        </div>
+        <!-- shared basics -->
         <div class="field-row two">
           <label>גופן הטקסט
             <select id="fontFamily">
@@ -136,15 +131,8 @@
           </label>
         </div>
 
-        <!-- bar-only controls -->
+        <!-- bar controls: basics + advanced -->
         <div id="barControls">
-          <div class="field-row">
-            <label>כיוון הפס (סדר הפרקים והפלייהד)</label>
-            <div class="seg-toggle" id="barDirection">
-              <button type="button" class="seg active" data-dir="ltr">משמאל לימין ←</button>
-              <button type="button" class="seg" data-dir="rtl">מימין לשמאל →</button>
-            </div>
-          </div>
           <div class="field-row">
             <label>גובה הפס
               <input type="range" id="barHFrac" min="0.03" max="0.2" step="0.005" value="0.09" />
@@ -155,48 +143,73 @@
               <input type="range" id="barYCenterFrac" min="0.02" max="1.0" step="0.005" value="0.08" />
             </label>
           </div>
-          <div class="field-row two">
-            <label>חיתוך מלמעלה
-              <input type="range" id="cropTopFrac" min="0" max="0.9" step="0.02" value="0" />
-            </label>
-            <label>חיתוך מלמטה
-              <input type="range" id="cropBottomFrac" min="0" max="0.9" step="0.02" value="0" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label>גודל טקסט (יחסית לגובה הפס)
-              <input type="range" id="labelSizeFrac" min="0.2" max="0.7" step="0.02" value="0.42" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label>עיגול פינות
-              <input type="range" id="cornerRadiusFrac" min="0" max="0.5" step="0.02" value="0" />
-            </label>
-          </div>
 
-          <h3 class="sub">סמן ההתקדמות (פלייהד)</h3>
-          <div class="field-row two">
-            <label>צורת הסמן
-              <select id="playheadStyle">
-                <option value="bar" selected>פס מעוגל</option>
-                <option value="line">קו דק</option>
-                <option value="triangle">משולש</option>
-                <option value="circle">עיגול</option>
-                <option value="none">ללא סמן</option>
-              </select>
-            </label>
-            <label>צבע הסמן
-              <input type="color" id="playheadColor" value="#ffffff" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label>עובי הסמן
-              <input type="range" id="playheadWidthFrac" min="0.02" max="0.4" step="0.01" value="0.08" />
-            </label>
-          </div>
+          <details class="adv">
+            <summary>הגדרות מתקדמות לפס</summary>
+            <div class="adv-body">
+              <div class="field-row">
+                <label>רוחב הפרקים בפס</label>
+                <div class="seg-toggle" id="widthMode">
+                  <button type="button" class="seg" data-mode="length">לפי האורך</button>
+                  <button type="button" class="seg active" data-mode="equal">שווה לכולם</button>
+                </div>
+              </div>
+              <div class="field-row">
+                <label>כיוון הפס (סדר הפרקים והפלייהד)</label>
+                <div class="seg-toggle" id="barDirection">
+                  <button type="button" class="seg active" data-dir="ltr">משמאל לימין ←</button>
+                  <button type="button" class="seg" data-dir="rtl">מימין לשמאל →</button>
+                </div>
+              </div>
+              <div class="field-row two">
+                <label>חיתוך מלמעלה
+                  <input type="range" id="cropTopFrac" min="0" max="0.9" step="0.02" value="0" />
+                </label>
+                <label>חיתוך מלמטה
+                  <input type="range" id="cropBottomFrac" min="0" max="0.9" step="0.02" value="0" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>גודל טקסט (יחסית לגובה הפס)
+                  <input type="range" id="labelSizeFrac" min="0.2" max="0.7" step="0.02" value="0.42" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>עיגול פינות
+                  <input type="range" id="cornerRadiusFrac" min="0" max="0.5" step="0.02" value="0" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>שקיפות רקע הפס
+                  <input type="range" id="bgOpacity" min="0" max="255" step="5" value="190" />
+                </label>
+              </div>
+
+              <h3 class="sub">סמן ההתקדמות (פלייהד)</h3>
+              <div class="field-row two">
+                <label>צורת הסמן
+                  <select id="playheadStyle">
+                    <option value="bar" selected>פס מעוגל</option>
+                    <option value="line">קו דק</option>
+                    <option value="triangle">משולש</option>
+                    <option value="circle">עיגול</option>
+                    <option value="none">ללא סמן</option>
+                  </select>
+                </label>
+                <label>צבע הסמן
+                  <input type="color" id="playheadColor" value="#ffffff" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>עובי הסמן
+                  <input type="range" id="playheadWidthFrac" min="0.02" max="0.4" step="0.01" value="0.08" />
+                </label>
+              </div>
+            </div>
+          </details>
         </div>
 
-        <!-- circle-only controls -->
+        <!-- circle/timer controls: basics + advanced -->
         <div id="circleControls" hidden>
           <div class="field-row two">
             <label>גודל העיגול
@@ -222,38 +235,41 @@
               </select>
             </label>
           </div>
-          <div class="field-row">
-            <label>עובי הטבעת
-              <input type="range" id="circleThicknessFrac" min="0.06" max="0.5" step="0.02" value="0.16" />
-            </label>
-          </div>
+          <label class="check-row"><input type="checkbox" id="circleShowName" checked /> הצגת שם הפרק בתוך הטיימר</label>
 
-          <h3 class="sub">צבעים וטקסט של הטיימר</h3>
-          <label class="check-row"><input type="checkbox" id="circleUseChapterColor" checked /> צבע הטבעת לפי צבע הפרק</label>
-          <div class="field-row two">
-            <label>צבע הטבעת (כשלא לפי הפרק)
-              <input type="color" id="circleRingColor" value="#388add" />
-            </label>
-            <label>צבע הטקסט בטיימר
-              <input type="color" id="circleTextColor" value="#ffffff" />
-            </label>
-          </div>
-          <div class="field-row two">
-            <label>צבע הרקע
-              <input type="color" id="circleBgColor" value="#16161c" />
-            </label>
-            <label>שקיפות הרקע
-              <input type="range" id="circleBgOpacity" min="0" max="255" step="5" value="190" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label>גודל הטקסט בטיימר
-              <input type="range" id="circleTextScale" min="0.5" max="1.8" step="0.05" value="1.0" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label>גופן הטיימר
-              <select id="circleFontFamily">
+          <details class="adv">
+            <summary>עיצוב מתקדם לטיימר</summary>
+            <div class="adv-body">
+              <div class="field-row">
+                <label>עובי הטבעת
+                  <input type="range" id="circleThicknessFrac" min="0.06" max="0.5" step="0.02" value="0.16" />
+                </label>
+              </div>
+              <label class="check-row"><input type="checkbox" id="circleUseChapterColor" checked /> צבע הטבעת לפי צבע הפרק</label>
+              <div class="field-row two">
+                <label>צבע הטבעת (כשלא לפי הפרק)
+                  <input type="color" id="circleRingColor" value="#388add" />
+                </label>
+                <label>צבע הטקסט בטיימר
+                  <input type="color" id="circleTextColor" value="#ffffff" />
+                </label>
+              </div>
+              <div class="field-row two">
+                <label>צבע הרקע
+                  <input type="color" id="circleBgColor" value="#16161c" />
+                </label>
+                <label>שקיפות הרקע
+                  <input type="range" id="circleBgOpacity" min="0" max="255" step="5" value="190" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>גודל הטקסט בטיימר
+                  <input type="range" id="circleTextScale" min="0.5" max="1.8" step="0.05" value="1.0" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label>גופן הטיימר
+                  <select id="circleFontFamily">
                 <option value="" selected>כמו הגופן הראשי</option>
                 <optgroup label="ללא תווית (Sans)">
                   <option value="Heebo">Heebo</option>
@@ -274,9 +290,10 @@
                 </optgroup>
                 <option value="Arial">Arial</option>
               </select>
-            </label>
-          </div>
-          <label class="check-row"><input type="checkbox" id="circleShowName" checked /> הצגת שם הפרק בתוך הטיימר</label>
+                </label>
+              </div>
+            </div>
+          </details>
         </div>
 
         <button type="button" id="resetDesign" class="btn btn-ghost" style="margin-top:8px;">↺ איפוס העיצוב לברירת מחדל</button>
@@ -351,6 +368,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=22"></script>
+  <script type="module" src="js/app.js?v=23"></script>
 </body>
 </html>

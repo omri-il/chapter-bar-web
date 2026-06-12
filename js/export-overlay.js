@@ -5,7 +5,7 @@
  * transparent canvas in real time and record it. Output is a transparent .webm to
  * drop on V2 in Premiere / Final Cut / Resolve / OBS.
  */
-import { computeLayout, renderFrame, visualProgressFromTime, formatClock } from './bar-engine.js?v=22';
+import { computeLayout, renderFrame, visualProgressFromTime, formatClock } from './bar-engine.js?v=23';
 
 export function isOverlaySupported() {
   return typeof MediaRecorder !== 'undefined'
