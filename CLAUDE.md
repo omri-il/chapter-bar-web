@@ -4,7 +4,10 @@ Browser-based generator for an animated **chapter progress bar** (and a circle/P
 indicator) for videos — no DaVinci Resolve, no editing software, no server. Everything runs in
 the visitor's own browser. Hebrew RTL UI.
 
-- **Live:** https://omri-il.github.io/chapter-bar-web/ (GitHub Pages, `master` root)
+- **Live:** https://bar.omri-iram.co.il/ (custom domain) — also https://omri-il.github.io/chapter-bar-web/
+  (GitHub Pages, `master` root; the github.io URL auto-redirects to the custom domain).
+  Custom domain set via repo `CNAME` file (`bar.omri-iram.co.il`) + Hostinger DNS `CNAME bar → omri-il.github.io`.
+- **Tutorial:** usage video (YouTube `xoZAIzwicV4`) embedded in a collapsible `<details class="tutorial">` below the header.
 - **Origin:** port of `davinci-automation/scripts/chapters/render_chapter_bar_flat.py`
   (same palette, layout fractions, dim/fill math) to Canvas2D.
 - **Audience:** non-technical / CapCut creators (burn-in MP4) + pro editors (transparent overlay).
