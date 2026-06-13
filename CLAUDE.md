@@ -5,9 +5,12 @@ indicator) for videos — no DaVinci Resolve, no editing software, no server. Ev
 the visitor's own browser. Hebrew RTL UI.
 
 - **Live:** https://omri-il.github.io/chapter-bar-web/ (GitHub Pages, `master` root)
-  - **Custom domain (deferred):** `bar.omri-iram.co.il` planned but not active — needs a Hostinger DNS
-    record (`CNAME bar → omri-il.github.io`) + re-adding the repo `CNAME` file and the GitHub Pages
-    custom-domain setting. Left off for now so the shared github.io link keeps working.
+  - **Branded link (deferred):** want `omri-iram.co.il/bar` → the tool. GitHub Pages can't serve a
+    sub-path, so this is a **Hostinger redirect** (chosen over a subdomain): hPanel → Manage
+    `omri-iram.co.il` → Advanced → Redirects → 301 from `/bar` to
+    `https://omri-il.github.io/chapter-bar-web/`. Fallback if the Redirects tool is absent: a
+    `bar/index.html` redirect file in the Hostinger File Manager. Not set up yet; the github.io link
+    stays the canonical URL and keeps working.
 - **Tutorial:** usage video (YouTube `xoZAIzwicV4`) embedded in a collapsible `<details class="tutorial">` below the header.
 - **Origin:** port of `davinci-automation/scripts/chapters/render_chapter_bar_flat.py`
   (same palette, layout fractions, dim/fill math) to Canvas2D.
