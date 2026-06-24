@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=24';
-import { exportOverlay } from './export-overlay.js?v=24';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=24';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=25';
+import { exportOverlay } from './export-overlay.js?v=25';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=25';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -252,9 +252,105 @@ async function ensureFontLoaded(family) {
 }
 
 // ---------- preview ----------
-let progress = 0;       // 0..1
+let progress = 0;       // 0..1 of the WHOLE video (master playhead)
 let playing = false;
 let lastTs = 0;
+
+// ---------- scrubber zoom + ruler ----------
+// The scrub slider maps to a *window* of the timeline so you can pinpoint exact
+// seconds on long videos. At zoom=1 the window is the whole video → byte-identical
+// to the old behavior (progress = value/1000). `progress` stays the source of truth.
+const ZOOMS = [1, 2, 4, 8, 16, 32];
+let zoom = 1;            // window = videoLength / zoom
+let winStart = 0;       // seconds, left edge of the visible window
+const ruler = $('ruler');
+const rctx = ruler ? ruler.getContext('2d') : null;
+
+function winLenSec() { return getState().videoLength / zoom; }
+function clampWin() {
+  const vl = getState().videoLength;
+  winStart = Math.max(0, Math.min(winStart, Math.max(0, vl - winLenSec())));
+}
+function recenterOnElapsed(elapsed) { winStart = elapsed - winLenSec() / 2; clampWin(); }
+function recenterWindow() { recenterOnElapsed(progress * getState().videoLength); }
+function scrubToProgress(val) {
+  const vl = getState().videoLength;
+  return vl > 0 ? Math.max(0, Math.min(1, (winStart + (val / 1000) * winLenSec()) / vl)) : 0;
+}
+function progressToScrub(p) {
+  const vl = getState().videoLength;
+  if (!(vl > 0)) return 0;
+  return Math.max(0, Math.min(1000, Math.round((p * vl - winStart) / winLenSec() * 1000)));
+}
+
+function drawRuler() {
+  if (!rctx) return;
+  const vl = getState().videoLength;
+  const dpr = window.devicePixelRatio || 1;
+  const cw = ruler.clientWidth || ruler.offsetWidth || 600;
+  const ch = 34;
+  if (ruler.width !== Math.round(cw * dpr)) { ruler.width = Math.round(cw * dpr); ruler.height = Math.round(ch * dpr); }
+  rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rctx.clearRect(0, 0, cw, ch);
+  const wll = $('winLenLabel'); if (wll) wll.textContent = vl > 0 ? formatDuration(winLenSec()) : '—';
+  if (!(vl > 0)) return;
+  clampWin();
+  const rtl = barDirection === 'rtl';
+  const X = f => (rtl ? cw * (1 - f) : cw * f);
+  const wl = winLenSec();
+  const elapsed = progress * vl;
+
+  // overview zone (whole video) — window highlight + playhead dot
+  rctx.fillStyle = 'rgba(255,255,255,0.10)';
+  rctx.fillRect(0, 3, cw, 3);
+  const ax = X(winStart / vl), bx = X((winStart + wl) / vl);
+  rctx.fillStyle = 'rgba(74,140,224,0.55)';
+  rctx.fillRect(Math.min(ax, bx), 1, Math.max(2, Math.abs(bx - ax)), 7);
+  rctx.fillStyle = '#fff';
+  rctx.beginPath(); rctx.arc(X(progress), 4.5, 3, 0, Math.PI * 2); rctx.fill();
+
+  // ruler zone (current window) — ticks + labels + playhead line
+  const baseY = 15;
+  const nice = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
+  const step = nice.find(s => wl / s <= 8) || 7200;
+  rctx.font = '11px Arial';
+  rctx.textBaseline = 'top';
+  rctx.textAlign = 'center';
+  for (let t = Math.ceil(winStart / step) * step; t <= winStart + wl + 1e-3; t += step) {
+    const x = X((t - winStart) / wl);
+    rctx.strokeStyle = 'rgba(255,255,255,0.20)';
+    rctx.beginPath(); rctx.moveTo(x, baseY); rctx.lineTo(x, baseY + 6); rctx.stroke();
+    rctx.fillStyle = 'rgba(232,234,240,0.75)';
+    rctx.fillText(formatDuration(t), x, baseY + 8);
+  }
+  if (elapsed >= winStart - 1e-3 && elapsed <= winStart + wl + 1e-3) {
+    const x = X((elapsed - winStart) / wl);
+    rctx.strokeStyle = '#4a8ce0';
+    rctx.lineWidth = 2;
+    rctx.beginPath(); rctx.moveTo(x, baseY - 3); rctx.lineTo(x, ch); rctx.stroke();
+    rctx.lineWidth = 1;
+  }
+}
+
+function setZoom(z) {
+  zoom = Math.max(1, Math.min(32, z));
+  if (zoom === 1) winStart = 0; else recenterWindow();
+  $('zoomLabel').textContent = zoom + '×';
+  if (!scrubbing) $('scrub').value = progressToScrub(progress);
+  drawRuler();
+}
+
+function nudge(dir) {
+  const vl = getState().videoLength;
+  if (!(vl > 0)) return;
+  const fps = parseInt($('fps').value, 10) || 30;
+  const elapsed = Math.max(0, Math.min(vl, progress * vl + dir * (1 / fps)));
+  progress = elapsed / vl;
+  if (zoom > 1 && (elapsed < winStart || elapsed > winStart + winLenSec())) recenterWindow();
+  if (videoReady) previewVideo.currentTime = elapsed;
+  if (!scrubbing) $('scrub').value = progressToScrub(progress);
+  drawPreview();
+}
 
 function drawPreview() {
   const { style, width, height, chapters, videoLength, subtitles } = getState();
@@ -272,8 +368,15 @@ function drawPreview() {
 
 function updateTimeLabel() {
   const { videoLength } = getState();
-  $('timeLabel').textContent = formatDuration(progress * videoLength);
-  if (!scrubbing) $('scrub').value = Math.round(progress * 1000); // don't fight the user's drag
+  const elapsed = progress * videoLength;
+  // show ms precision when zoomed in (that's the point of zooming)
+  $('timeLabel').textContent = zoom > 1 ? formatDurationPrecise(elapsed) : formatDuration(elapsed);
+  if (!scrubbing) {
+    // keep the playhead inside the visible window during playback
+    if (zoom > 1 && (elapsed < winStart || elapsed > winStart + winLenSec())) recenterWindow();
+    $('scrub').value = progressToScrub(progress); // don't fight the user's drag
+  }
+  drawRuler();
 }
 
 function loop(ts) {
@@ -498,10 +601,35 @@ $('playBtn').addEventListener('click', () => togglePlay());
 $('scrub').addEventListener('pointerdown', () => { scrubbing = true; });
 ['pointerup', 'pointercancel', 'change'].forEach(ev => $('scrub').addEventListener(ev, () => { scrubbing = false; }));
 $('scrub').addEventListener('input', (e) => {
-  progress = e.target.value / 1000;
+  progress = scrubToProgress(parseFloat(e.target.value));
   if (videoReady) { const { videoLength } = getState(); previewVideo.currentTime = progress * videoLength; }
   if (!playing) drawPreview(); // while playing, the loop already redraws every frame
 });
+
+// zoom + nudge + ruler interactions
+$('zoomIn').addEventListener('click', () => setZoom(ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(zoom) + 1)]));
+$('zoomOut').addEventListener('click', () => setZoom(ZOOMS[Math.max(0, ZOOMS.indexOf(zoom) - 1)]));
+$('nudgeBack').addEventListener('click', () => nudge(-1));
+$('nudgeFwd').addEventListener('click', () => nudge(1));
+if (ruler) {
+  ruler.addEventListener('click', (e) => {
+    const vl = getState().videoLength;
+    if (!(vl > 0)) return;
+    const rect = ruler.getBoundingClientRect();
+    let fx = (e.clientX - rect.left) / rect.width;
+    if (barDirection === 'rtl') fx = 1 - fx;
+    fx = Math.max(0, Math.min(1, fx));
+    let elapsed;
+    if (e.clientY - rect.top < 11) { elapsed = fx * vl; recenterOnElapsed(elapsed); } // overview zone: jump anywhere
+    else { elapsed = winStart + fx * winLenSec(); }                                    // ruler zone: jump within window
+    elapsed = Math.max(0, Math.min(vl, elapsed));
+    progress = elapsed / vl;
+    if (videoReady) previewVideo.currentTime = elapsed;
+    $('scrub').value = progressToScrub(progress);
+    drawPreview();
+  });
+}
+window.addEventListener('resize', () => drawRuler());
 
 // ---------- bind global controls ----------
 ['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'circleUseChapterColor', 'circleRingColor', 'circleTextColor', 'circleBgColor', 'circleBgOpacity', 'circleTextScale', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
@@ -529,6 +657,7 @@ $('resetDesign').addEventListener('click', () => {
   barDirection = 'ltr';
   $('barDirection').querySelectorAll('.seg').forEach(b => b.classList.toggle('active', b.dataset.dir === 'ltr'));
   $('scrub').dir = 'ltr';
+  setZoom(1);
   showBar = true; $('showBar').checked = true;
   showCircle = false; $('showCircle').checked = false;
   $('showCircle').dataset.touched = '';   // re-arm side-timer defaults

@@ -86,6 +86,16 @@ tests/                # Playwright scripts (see "Testing")
   `requestVideoFrameCallback` fps sample — no full-file read), shows the real footage **behind the
   bar** in the preview. **Scrub keeps playing** (seek doesn't pause), and **capture buttons**
   (➕ under the scrubber, ◎ per row) drop a chapter at the live playhead time.
+- **Scrubber zoom + ruler (precision):** the scrub slider maps to a **window** of the timeline
+  (`videoLength / zoom`), so on a long video you can pinpoint exact seconds. Zoom −/+ (1×→32×;
+  the window auto-recenters on the playhead, and follows it during playback). A **ruler canvas**
+  (`#ruler`) above the scrubber shows two zones: an **overview** (whole video with the current
+  window highlighted + playhead dot — click anywhere to jump) and a **tick ruler** of the current
+  window with time labels (click to jump within the window). **Nudge ◁ ▷** step one frame
+  (`1/fps`). The time label switches to **ms precision** (`m:ss.mmm`) when zoomed. State:
+  `zoom`/`winStart` + `scrubToProgress`/`progressToScrub`/`drawRuler` in `app.js`; `progress`
+  (0..1 of the whole video) stays the source of truth, so **at zoom=1 behavior is byte-identical**
+  to before (the whole existing test suite stays green). The ruler mirrors in RTL.
 - **Layout UX:** cards are **collapsible** (Design + Export collapsed by default) and
   **drag-to-reorder** via the ⠿ grip (order persisted in `localStorage` `chapterbar.cardOrder.v1`).
   Preview is **sticky**.

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=24" />
+  <link rel="stylesheet" href="css/style.css?v=25" />
 </head>
 <body>
   <header class="site-header">
@@ -346,10 +346,20 @@
           <video id="previewVideo" playsinline muted hidden></video>
           <canvas id="preview"></canvas>
         </div>
+        <canvas id="ruler" class="ruler" title="לחצו כדי לקפוץ למיקום"></canvas>
         <div class="scrubber-row">
           <button type="button" id="playBtn" class="btn btn-icon" title="נגן/עצור">▶</button>
+          <button type="button" id="nudgeBack" class="btn btn-icon" title="פריים אחורה">◁</button>
           <input type="range" id="scrub" min="0" max="1000" step="1" value="0" />
+          <button type="button" id="nudgeFwd" class="btn btn-icon" title="פריים קדימה">▷</button>
           <span id="timeLabel" class="time-label">0:00</span>
+        </div>
+        <div class="zoom-row">
+          <span>זום:</span>
+          <button type="button" id="zoomOut" class="btn btn-icon" title="הקטן זום">−</button>
+          <span id="zoomLabel" class="zoom-val">1×</span>
+          <button type="button" id="zoomIn" class="btn btn-icon" title="הגדל זום — לדיוק בשניות">+</button>
+          <span class="zoom-hint">החלון: <span id="winLenLabel">—</span> · גררו בסרגל / לחצו על הסרגל למעלה</span>
         </div>
         <button type="button" id="captureChapter" class="btn btn-ghost">➕ פרק חדש מהמיקום הנוכחי</button>
       </div>
@@ -384,6 +394,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=24"></script>
+  <script type="module" src="js/app.js?v=25"></script>
 </body>
 </html>

@@ -228,9 +228,17 @@ input[type="file"] { width: 100%; margin: 8px 0; color: var(--muted); font-size:
 }
 #preview { position: relative; width: 100%; height: auto; display: block; }
 
-.scrubber-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.scrubber-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .scrubber-row input[type="range"] { flex: 1; margin-top: 0; }
-.time-label { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 44px; text-align: center; }
+.scrubber-row #nudgeBack, .scrubber-row #nudgeFwd { flex: 0 0 auto; }
+.time-label { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 56px; text-align: center; }
+.ruler { width: 100%; height: 34px; display: block; margin-top: 12px; cursor: pointer;
+  border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+.zoom-row { display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-size: 0.82rem; color: var(--muted); flex-wrap: wrap; }
+.zoom-val { font-variant-numeric: tabular-nums; min-width: 30px; text-align: center;
+  font-weight: 600; color: var(--text); }
+.zoom-hint { opacity: 0.8; }
 
 /* ---- Export ---- */
 .export-option { margin-bottom: 12px; }
