@@ -255,3 +255,12 @@ input[type="file"] { width: 100%; margin: 8px 0; color: var(--muted); font-size:
 
 .site-footer { text-align: center; color: var(--muted); padding: 24px; font-size: 0.85rem; }
 .site-footer a { color: var(--accent); }
+
+.site-header.has-scan { display: flex; align-items: center; justify-content: center; gap: 24px; }
+
+/* QR for someone watching on a projector or YouTube: holds the fixed public address only. */
+.scan { flex: none; margin: 0; display: grid; justify-items: center; gap: 6px; }
+.scan img { display: block; width: 124px; height: 124px; border-radius: 8px; }
+.scan figcaption { font-size: 13px; color: var(--muted); }
+/* Already on a phone: nothing to scan. */
+@media (max-width: 560px) { .scan { display: none; } }

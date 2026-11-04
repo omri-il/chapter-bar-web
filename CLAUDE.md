@@ -156,3 +156,6 @@ can't be triggered by Playwright's synthetic mouse — verify reorder by dispatc
 
 ## Deploy
 Push to `master`; GitHub Pages serves the repo root. Allow ~1–2 min, then hard-refresh.
+
+## QR on the front page
+`qr.svg` is for someone watching on a projector or YouTube. It holds the fixed address `https://omri-il.github.io/chapter-bar-web/` only, made once with `segno` (error M, border 2). Nothing is generated at run time and no outside service is called.
