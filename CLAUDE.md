@@ -58,6 +58,15 @@ tests/                # Playwright scripts (see "Testing")
   `HH:MM:SS(.mmm)`, `MM:SS`. **`#importOffset`** (default on) subtracts the earliest marker so the
   first chapter = `0:00` (Resolve timelines start at `01:00:00:00`). `applyImport` replaces the rows
   (reuses `addChapterRow`/`sortChapterRows`) and warns if the last chapter exceeds the total length.
+- **Bar look (`#barLook`, `style.look`):** **`academy` (default)** = the business's dark bar
+  (Omri 2026-11-15; values = claude-config `design/business-brand.json` → `chapter_bar`, the same as
+  davinci-automation `--palette academy`): navy cells at 0.93, played chapters `#1A365D` with `#9FB2D4`
+  text, the chapter that plays = ONE ochre `#FFC250` tag with navy text, later chapters white, Rubik
+  500/700, **no playhead**. Drawn by `renderBarAcademy`; the font select's default (Arial) means Rubik
+  in this look. The timer ring is ochre on a navy track. **`colors`** = the classic look (a colour per
+  chapter + playhead, `renderBarColors`), for GEG and anyone who wants it. Playhead tests pick `colors`.
+- **Page look:** the business design language (navy `#002045`, white cards, ochre only on the burn-in
+  button, Rubik titles + Assistant text). The preview canvas stays dark (it stands in for a video).
 - **Two indicator layers, independently toggleable (can show both at once):** horizontal **bar**
   (`showBar`, default on) + **circle timer** (`showCircle`, default off). `renderFrame` composes them
   (`if (showBar) renderBar; if (showCircle) renderCircle`). The circle has a **`circleShowName`** flag:

@@ -1,7 +1,7 @@
 /* app.js — form state, live preview, and export wiring. */
-import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=26';
-import { exportOverlay } from './export-overlay.js?v=26';
-import { burnIn, isBurnInSupported } from './export-burnin.js?v=26';
+import { DEFAULT_STYLE, computeLayout, buildChapters, renderFrame, visualProgressFromTime } from './bar-engine.js?v=27';
+import { exportOverlay } from './export-overlay.js?v=27';
+import { burnIn, isBurnInSupported } from './export-burnin.js?v=27';
 
 // ---------- color helpers (rows store rgb as 0..1 triplets) ----------
 const PALETTE_HEX = ['#0f6e57', '#388add', '#734db8', '#bf4d26', '#bf9926'];
@@ -192,6 +192,7 @@ function readStyle() {
   const cbc = hexToRgb01($('circleBgColor').value);
   return {
     ...DEFAULT_STYLE,
+    look: $('barLook').value,
     barHFrac: parseFloat($('barHFrac').value),
     barYCenterFrac: parseFloat($('barYCenterFrac').value),
     cornerRadiusFrac: parseFloat($('cornerRadiusFrac').value),
@@ -242,6 +243,9 @@ function getState() {
 
 // Make sure a (Google) font is actually downloaded before we render with it on canvas.
 async function ensureFontLoaded(family) {
+  if (document.fonts && $('barLook') && $('barLook').value === 'academy') {
+    try { await Promise.all([document.fonts.load('500 48px "Rubik"'), document.fonts.load('700 48px "Rubik"')]); } catch (_) {}
+  }
   if (!document.fonts || family === 'Arial') return;
   try {
     await Promise.all([
@@ -301,31 +305,31 @@ function drawRuler() {
   const elapsed = progress * vl;
 
   // overview zone (whole video) — window highlight + playhead dot
-  rctx.fillStyle = 'rgba(255,255,255,0.10)';
+  rctx.fillStyle = 'rgba(0,32,69,0.12)';
   rctx.fillRect(0, 3, cw, 3);
   const ax = X(winStart / vl), bx = X((winStart + wl) / vl);
-  rctx.fillStyle = 'rgba(74,140,224,0.55)';
+  rctx.fillStyle = 'rgba(0,32,69,0.35)';
   rctx.fillRect(Math.min(ax, bx), 1, Math.max(2, Math.abs(bx - ax)), 7);
-  rctx.fillStyle = '#fff';
+  rctx.fillStyle = '#002045';
   rctx.beginPath(); rctx.arc(X(progress), 4.5, 3, 0, Math.PI * 2); rctx.fill();
 
   // ruler zone (current window) — ticks + labels + playhead line
   const baseY = 15;
   const nice = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600];
   const step = nice.find(s => wl / s <= 8) || 7200;
-  rctx.font = '11px Arial';
+  rctx.font = '500 11px Rubik, Arial, sans-serif';
   rctx.textBaseline = 'top';
   rctx.textAlign = 'center';
   for (let t = Math.ceil(winStart / step) * step; t <= winStart + wl + 1e-3; t += step) {
     const x = X((t - winStart) / wl);
-    rctx.strokeStyle = 'rgba(255,255,255,0.20)';
+    rctx.strokeStyle = 'rgba(0,32,69,0.30)';
     rctx.beginPath(); rctx.moveTo(x, baseY); rctx.lineTo(x, baseY + 6); rctx.stroke();
-    rctx.fillStyle = 'rgba(232,234,240,0.75)';
+    rctx.fillStyle = '#43474E';
     rctx.fillText(formatDuration(t), x, baseY + 8);
   }
   if (elapsed >= winStart - 1e-3 && elapsed <= winStart + wl + 1e-3) {
     const x = X((elapsed - winStart) / wl);
-    rctx.strokeStyle = '#4a8ce0';
+    rctx.strokeStyle = '#002045';
     rctx.lineWidth = 2;
     rctx.beginPath(); rctx.moveTo(x, baseY - 3); rctx.lineTo(x, ch); rctx.stroke();
     rctx.lineWidth = 1;
@@ -632,7 +636,7 @@ if (ruler) {
 window.addEventListener('resize', () => drawRuler());
 
 // ---------- bind global controls ----------
-['barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'circleUseChapterColor', 'circleRingColor', 'circleTextColor', 'circleBgColor', 'circleBgOpacity', 'circleTextScale', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
+['barLook', 'barHFrac', 'barYCenterFrac', 'cornerRadiusFrac', 'cropTopFrac', 'cropBottomFrac', 'labelSizeFrac', 'bgOpacity', 'fps', 'resolution', 'videoLength', 'textColor', 'playheadColor', 'playheadWidthFrac', 'playheadStyle', 'circleSizeFrac', 'circlePos', 'circleThicknessFrac', 'circleUseChapterColor', 'circleRingColor', 'circleTextColor', 'circleBgColor', 'circleBgOpacity', 'circleTextScale', 'subSizeFrac', 'subPosFrac', 'subColor', 'subBgOpacity']
   .forEach(id => { const el = $(id); if (el) el.addEventListener('input', drawPreview); });
 // timer font: load the face before rendering with it
 $('circleFontFamily').addEventListener('change', async () => {
@@ -642,6 +646,7 @@ $('circleFontFamily').addEventListener('change', async () => {
 
 // ---------- reset buttons ----------
 const DESIGN_DEFAULTS = {
+  barLook: 'academy',
   bgOpacity: '190', fontFamily: 'Arial', textColor: '#ffffff',
   barHFrac: '0.09', barYCenterFrac: '0.08', cropTopFrac: '0', cropBottomFrac: '0',
   labelSizeFrac: '0.42', cornerRadiusFrac: '0',
