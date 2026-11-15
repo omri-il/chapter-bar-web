@@ -10,6 +10,7 @@
 // All "frac" values are fractions of frame height/width, so the bar scales with resolution.
 export const DEFAULT_STYLE = {
   layout: 'bar',          // legacy exclusive selector (kept for back-compat)
+  look: 'academy',        // 'academy' (the business's dark navy bar, default) | 'colors' (a colour per chapter)
   showBar: true,          // draw the horizontal bar
   showCircle: false,      // draw the circle / side-timer
   circleShowName: true,   // circle: show active chapter name above the countdown
@@ -47,6 +48,18 @@ export const DEFAULT_STYLE = {
   subPosFrac: 0.18,           // distance from bottom to the BOTTOM of the subtitle block
   subRGBA: [255, 255, 255, 255],
   subBgRGBA: [0, 0, 0, 140],  // readability box behind the text
+  // The business's academy look (Omri, 2026-11-15; claude-config design/business-brand.json ->
+  // chapter_bar, the same values as davinci-automation's `--palette academy`).
+  academy: {
+    ground: [0, 32, 69],          // #002045 navy
+    groundAlpha: 0.93,
+    done: [26, 54, 93],           // #1A365D chapters already played
+    text: [255, 255, 255],        // later chapters
+    textDone: [159, 178, 212],    // #9FB2D4
+    currentTag: [255, 194, 80],   // #FFC250 ochre = "now"
+    currentText: [0, 32, 69],     // #002045
+    font: 'Rubik',
+  },
   // Palette as 0..1 RGB triplets (teal, blue, purple, coral, gold) — same as the script.
   palette: [
     [0.06, 0.43, 0.34],
@@ -225,7 +238,133 @@ function wrapLine(ctx, text, maxWidth) {
 
 // Horizontal bar (original render_chapter_bar_flat.py look).
 // progress is 0..1 across the WHOLE video, independent of the bar span.
-function renderBar(ctx, { progress, chapters, width, height, layout, style = DEFAULT_STYLE }) {
+function renderBar(ctx, opts) {
+  if ((opts.style || DEFAULT_STYLE).look === 'academy') return renderBarAcademy(ctx, opts);
+  return renderBarColors(ctx, opts);
+}
+
+// The chapter that plays at visual progress p (0..1).
+function currentIndex(chapters, p) {
+  for (let i = 0; i < chapters.length; i++) {
+    if (p >= chapters[i].sp && p < chapters[i].ep) return i;
+  }
+  return p >= 1 ? chapters.length - 1 : 0;
+}
+
+// The font a look writes in: academy = Rubik unless the user picked another font than the default.
+function lookFont(style) {
+  if (style.look === 'academy' && (!style.fontFamily || style.fontFamily === 'Arial')) {
+    return (style.academy || DEFAULT_STYLE.academy).font;
+  }
+  return style.fontFamily || 'Arial';
+}
+
+// The business's dark bar: a port of _draw_academy in davinci-automation's
+// render_chapter_bar_flat.py. Chapters already played sit on a lighter navy with dimmed text,
+// the chapter that plays is ONE ochre tag with navy text, later ones white on navy.
+// No playhead and no shadows: ochre is the only thing that says "now".
+function renderBarAcademy(ctx, { progress, chapters, width, layout, style = DEFAULT_STYLE }) {
+  const A = style.academy || DEFAULT_STYLE.academy;
+  const { barLeft: bl, barRight: br, barTop: bt, barBottom: bb, corner } = layout;
+  const barW = br - bl;
+  const barH = bb - bt;
+  const n = chapters.length;
+  if (!n) return;
+  progress = Math.max(0, Math.min(1, progress));
+  // The background-opacity slider still works: its default (190) gives the brand's 0.93.
+  const bgA = style.bgRGBA ? style.bgRGBA[3] : 190;
+  const alpha = Math.max(0, Math.min(1, A.groundAlpha * bgA / 190));
+  const mix = (base, t) => base.map(c => Math.round(c + (255 - c) * t));
+  const cur = currentIndex(chapters, progress);
+
+  const cropT = (style.cropTopFrac || 0) * layout.barH;
+  const cropB = (style.cropBottomFrac || 0) * layout.barH;
+  const cropped = cropT > 0 || cropB > 0;
+  if (cropped) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, bt + cropT, width, Math.max(0, (bb - cropB) - (bt + cropT)));
+    ctx.clip();
+  }
+
+  const rtl = style.direction === 'rtl';
+  ctx.save();
+  if (rtl) { ctx.translate(bl + br, 0); ctx.scale(-1, 1); }
+
+  // 1) Each chapter's cell: played = lighter navy, the rest = navy. One pass, no overlap,
+  // so the bar's alpha stays one value everywhere.
+  const segs = chapters.map(ch => ({ ch, l: bl + Math.round(ch.sp * barW), r: bl + Math.round(ch.ep * barW) }));
+  segs.forEach((s, i) => {
+    if (s.r <= s.l) return;
+    ctx.fillStyle = rgba([...(i < cur ? A.done : A.ground), alpha * 255]);
+    if (i === 0 || i === n - 1) {
+      roundRect(ctx, s.l, bt, s.r, bb, [
+        i === 0 ? corner : 0, i === n - 1 ? corner : 0,
+        i === n - 1 ? corner : 0, i === 0 ? corner : 0,
+      ]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(s.l, bt, s.r - s.l, bb - bt);
+    }
+  });
+
+  // 2) Faint lines between chapters (none beside the ochre tag), pre-mixed so the alpha stays one.
+  const insetV = Math.max(2, Math.round(barH * 0.22));
+  ctx.lineWidth = Math.max(1, Math.floor(barH / 40));
+  for (let i = 1; i < n; i++) {
+    if (i === cur || i === cur + 1) continue;
+    const x = segs[i].l;
+    ctx.strokeStyle = rgba([...mix(i < cur ? A.done : A.ground, 0.13), alpha * 255]);
+    ctx.beginPath();
+    ctx.moveTo(x, bt + insetV);
+    ctx.lineTo(x, bb - insetV);
+    ctx.stroke();
+  }
+
+  // 3) The tag on the chapter that plays.
+  const pad = Math.max(2, Math.round(barH * 0.12));
+  const cs = segs[cur];
+  if (cs.r - cs.l > 2 * pad) {
+    ctx.fillStyle = rgba([...A.currentTag, 255]);
+    roundRect(ctx, cs.l + pad, bt + pad, cs.r - pad, bb - pad, Math.max(2, Math.round(barH * 0.2)));
+    ctx.fill();
+  }
+  ctx.restore(); // end mirrored geometry
+
+  // 4) The names, ONE uniform size (measured at the heaviest weight, so every label fits).
+  const cy = layout.barCenterY;
+  const family = `"${lookFont(style)}", "Segoe UI", sans-serif`;
+  const FLOOR = 10;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.direction = 'rtl';
+  const labels = segs.map((s, i) => ({
+    ...s, i, avail: i === cur ? (s.r - s.l) - 2 * pad - 8 : (s.r - s.l) - 8,
+  })).filter(s => s.r > s.l && s.ch.name);
+  let size = layout.fontSize;
+  for (const s of labels) {
+    let sz = layout.fontSize;
+    while (sz > FLOOR) {
+      ctx.font = `700 ${sz}px ${family}`;
+      if (ctx.measureText(s.ch.name).width <= s.avail) break;
+      sz -= 1;
+    }
+    if (sz < size) size = sz;
+  }
+  for (const s of labels) {
+    ctx.font = `700 ${size}px ${family}`;
+    if (ctx.measureText(s.ch.name).width > s.avail) continue;
+    ctx.font = `${s.i === cur ? 700 : 500} ${size}px ${family}`;
+    ctx.fillStyle = rgba([...(s.i < cur ? A.textDone : s.i === cur ? A.currentText : A.text), 255]);
+    const cx = rtl ? (bl + br) - (s.l + s.r) / 2 : (s.l + s.r) / 2;
+    ctx.fillText(s.ch.name, cx, cy);
+  }
+
+  if (cropped) ctx.restore();
+}
+
+// The classic look: a colour per chapter, filling as it plays, with a playhead.
+function renderBarColors(ctx, { progress, chapters, width, height, layout, style = DEFAULT_STYLE }) {
 
   const { barLeft: bl, barRight: br, barTop: bt, barBottom: bb, corner } = layout;
   const barW = br - bl;
@@ -401,14 +540,24 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
   const cy = row === 't' ? margin + R : row === 'b' ? height - margin - R : height / 2;
 
   const ringR = R - thickness / 2;
-  const ringRGB01 = (style.circleUseChapterColor === false && style.circleRingRGB) ? style.circleRingRGB : active.rgb;
+  const academy = style.look === 'academy';
+  const A = style.academy || DEFAULT_STYLE.academy;
+  const followChapter = !(style.circleUseChapterColor === false && style.circleRingRGB);
+  const ringRGB01 = followChapter ? (academy ? A.currentTag.map(c => c / 255) : active.rgb) : style.circleRingRGB;
   const bright = scaleColor(ringRGB01, 1.0);
-  const dim = scaleColor(ringRGB01, style.dim);
+  // Academy: the track is the lighter navy (a dimmed ochre would read as brown).
+  const dim = academy ? A.done : scaleColor(ringRGB01, style.dim);
+  // Academy: a disc left at the classic default colour becomes the brand navy.
+  let discRGBA = style.circleBgRGBA || style.bgRGBA;
+  const classicDisc = DEFAULT_STYLE.circleBgRGBA;
+  if (academy && discRGBA[0] === classicDisc[0] && discRGBA[1] === classicDisc[1] && discRGBA[2] === classicDisc[2]) {
+    discRGBA = [...A.ground, discRGBA[3]];
+  }
 
   // 1) Background disc
   ctx.beginPath();
   ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.fillStyle = rgba(style.circleBgRGBA || style.bgRGBA);
+  ctx.fillStyle = rgba(discRGBA);
   ctx.fill();
 
   // 2) Ring track (full, dim)
@@ -433,7 +582,7 @@ function renderCircle(ctx, { elapsedSec = 0, chapters, width, height, style = DE
 
   // 4) Text inside — countdown, plus the chapter name above it (unless hidden).
   const inner = (ringR - thickness / 2) * 2; // usable inner width
-  const family = `"${style.circleFontFamily || style.fontFamily || 'Arial'}", "Segoe UI", sans-serif`;
+  const family = `"${style.circleFontFamily || lookFont(style)}", "Segoe UI", sans-serif`;
   const scale = style.circleTextScale || 1;
   const textRGBA = style.circleTextRGBA || style.labelRGBA;
   ctx.textAlign = 'center';

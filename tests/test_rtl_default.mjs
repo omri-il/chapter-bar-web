@@ -4,6 +4,7 @@ const page = await browser.newPage();
 const errors=[]; page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push('C:'+m.text());});
 await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1000);
+await page.locator('#barLook').evaluate(el => { el.value = 'colors'; el.dispatchEvent(new Event('input', { bubbles: true })); }); // the playhead belongs to the classic look
 console.log('active dir button:', (await page.locator('#barDirection .seg.active').textContent()).trim());
 console.log('scrub dir:', await page.locator('#scrub').getAttribute('dir'));
 // at 15% progress, playhead should be on the RIGHT by default now

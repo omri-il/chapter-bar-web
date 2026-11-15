@@ -8,8 +8,8 @@
   <meta name="description" content="כלי חינמי ליצירת פס התקדמות פרקים לסרטוני יוטיוב — בלי תוכנות עריכה. הכל רץ בדפדפן." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;700&family=Rubik:wght@400;700&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=26" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Assistant:wght@400;500;600;700&family=Rubik:wght@400;500;600;700;800&family=Alef:wght@400;700&family=Miriam+Libre:wght@400;700&family=Secular+One&family=Suez+One&family=Karantina:wght@400;700&family=Bellefair&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=27" />
 </head>
 <body>
   <header class="site-header has-scan">
@@ -124,6 +124,17 @@
 
       <div class="card" data-card="design">
         <h2>עיצוב</h2>
+
+        <!-- the bar's look: the business's dark bar (default) or a colour per chapter -->
+        <div class="field-row">
+          <label>מראה הפס
+            <select id="barLook">
+              <option value="academy" selected>כחול כהה, הפרק שמתנגן בצהוב</option>
+              <option value="colors">צבע לכל פרק</option>
+            </select>
+            <small>בצבע לכל פרק: הצבעים נקבעים ליד כל פרק ברשימת הפרקים.</small>
+          </label>
+        </div>
 
         <!-- shared basics -->
         <div class="field-row two">
@@ -401,6 +412,6 @@
     <p>נבנה על ידי <a href="https://omri-iram.co.il" target="_blank" rel="noopener">עומרי אירם</a> · הכל רץ בדפדפן, שום דבר לא נשמר בשרת.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=26"></script>
+  <script type="module" src="js/app.js?v=27"></script>
 </body>
 </html>
